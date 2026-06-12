@@ -1,0 +1,6 @@
+@InteriorHub.API_HostAddress = http://localhost:5268
+
+GET {{InteriorHub.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
