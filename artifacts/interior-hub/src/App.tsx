@@ -1,19 +1,47 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+
 import { AppLayout } from "@/components/layout";
+import { EngineerLayout } from "@/components/engineer-layout";
+
+// Admin pages
 import Dashboard from "@/pages/dashboard";
 import Engineers from "@/pages/engineers";
 import Categories from "@/pages/categories";
 import Projects from "@/pages/projects";
 import ContactRequests from "@/pages/contact-requests";
 import Settings from "@/pages/settings";
+
+// Engineer portal pages
+import EngineerProfilePage from "@/pages/engineer/profile";
+import EngineerProjects from "@/pages/engineer/projects";
+import ProjectImages from "@/pages/engineer/project-images";
+import EngineerContactRequests from "@/pages/engineer/contact-requests";
+
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
 
 function Router() {
+  const [location] = useLocation();
+  const isEngineerRoute = location.startsWith("/engineer");
+
+  if (isEngineerRoute) {
+    return (
+      <EngineerLayout>
+        <Switch>
+          <Route path="/engineer/profile" component={EngineerProfilePage} />
+          <Route path="/engineer/projects/:id/images" component={ProjectImages} />
+          <Route path="/engineer/projects" component={EngineerProjects} />
+          <Route path="/engineer/contact-requests" component={EngineerContactRequests} />
+          <Route component={NotFound} />
+        </Switch>
+      </EngineerLayout>
+    );
+  }
+
   return (
     <AppLayout>
       <Switch>

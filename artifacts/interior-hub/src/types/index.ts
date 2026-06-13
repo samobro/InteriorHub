@@ -86,3 +86,43 @@ export interface PaginatedResult<T> {
   data: T[];
   pagination: PaginationMeta;
 }
+
+// ─── Engineer-portal–specific types ──────────────────────────────────────────
+
+export interface EngineerProfile {
+  id: number;
+  fullName: string;
+  email: string;
+  city: string;
+  phone: string | null;
+  bio: string | null;
+  profileImageUrl: string | null;
+  status: EngineerStatus;
+  trialEndsAt: string | null;
+}
+
+export interface EngineerProject {
+  id: number;
+  title: string;
+  description: string | null;
+  coverImageUrl: string | null;
+  categoryId: number;
+  categoryName: string;
+  createdAt: string;
+}
+
+export interface ProjectImage {
+  id: number;
+  url: string;
+  displayOrder: number;
+}
+
+export interface EngineerContactRequest {
+  id: number;
+  clientName: string;
+  clientEmail: string;
+  clientPhone: string | null;
+  message: string | null;
+  isRead: boolean;
+  createdAt: string;
+}

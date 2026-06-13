@@ -6,6 +6,10 @@ import type {
   ContactRequest,
   ActivityItem,
   DashboardStats,
+  EngineerProfile,
+  EngineerProject,
+  ProjectImage,
+  EngineerContactRequest,
 } from "@/types";
 
 export const mockEngineers: Engineer[] = [
@@ -283,3 +287,209 @@ export const mockStats: DashboardStats = {
   approvedEngineers: mockEngineers.filter((e) => e.status === "approved").length,
   disabledEngineers: mockEngineers.filter((e) => e.status === "disabled").length,
 };
+
+// ─── Engineer Portal mock data ────────────────────────────────────────────────
+// Represents the currently-logged-in engineer (Layla Al-Hamdani, id: 1)
+
+export const mockMyProfile: EngineerProfile = {
+  id: 1,
+  fullName: "Layla Al-Hamdani",
+  email: "layla.hamdani@example.com",
+  city: "Sana'a",
+  phone: "+967 77 123 4567",
+  bio: "Specializing in modern residential interiors with a focus on natural materials and Yemeni architectural heritage. Over 8 years of experience transforming living spaces into functional art.",
+  profileImageUrl: null,
+  status: "approved",
+  trialEndsAt: "2025-09-15",
+};
+
+export const mockMyProjects: EngineerProject[] = [
+  {
+    id: 101,
+    title: "Old City Riad Revival",
+    description: "A sensitive restoration of a 19th-century riad in Sana'a's UNESCO old city. Preserved original alabaster windows, hand-carved gypsum plasterwork, and tower house aesthetic.",
+    coverImageUrl: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80",
+    categoryId: 5,
+    categoryName: "Heritage Restoration",
+    createdAt: "2025-03-12T10:00:00Z",
+  },
+  {
+    id: 102,
+    title: "Al-Rawdah Boutique Cafe",
+    description: "A cozy neighbourhood cafe in Al-Rawdah district with handmade ceramic tiles and vintage Yemen coffee-trade memorabilia.",
+    coverImageUrl: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=600&q=80",
+    categoryId: 2,
+    categoryName: "Commercial",
+    createdAt: "2025-05-02T09:00:00Z",
+  },
+  {
+    id: 103,
+    title: "Sana'a Family Villa — Main Salon",
+    description: "A grand family reception room blending traditional Yemeni architecture with contemporary comfort. Custom mashrabiya screens diffuse afternoon light across the space.",
+    coverImageUrl: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&q=80",
+    categoryId: 1,
+    categoryName: "Residential",
+    createdAt: "2025-01-15T08:00:00Z",
+  },
+  {
+    id: 104,
+    title: "Hadda District Penthouse",
+    description: "Full fit-out for a high-end penthouse apartment. Polished concrete, warm walnut millwork, and a rooftop terrace with panoramic views of the old city.",
+    coverImageUrl: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600&q=80",
+    categoryId: 1,
+    categoryName: "Residential",
+    createdAt: "2024-12-20T11:00:00Z",
+  },
+  {
+    id: 105,
+    title: "Artisan Jewelry Boutique",
+    description: "A luxury retail environment for a Yemeni silversmith brand. Display cases built from reclaimed cedar; walls lined with hand-hammered copper panels.",
+    coverImageUrl: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&q=80",
+    categoryId: 6,
+    categoryName: "Retail",
+    createdAt: "2025-02-28T13:00:00Z",
+  },
+  {
+    id: 106,
+    title: "Taiz Mountain Retreat",
+    description: "Weekend retreat villa in the Taiz highlands. Stone exterior, rammed-earth interior walls, and open-plan living framing the valley view.",
+    coverImageUrl: "https://images.unsplash.com/photo-1416331108676-a22ccb276e35?w=600&q=80",
+    categoryId: 1,
+    categoryName: "Residential",
+    createdAt: "2024-11-01T09:30:00Z",
+  },
+  {
+    id: 107,
+    title: "Heritage Foundation Library",
+    description: "Reading rooms and archive spaces for a cultural heritage foundation. Restored Ottoman-era stonework paired with modern archival shelving and reading lighting.",
+    coverImageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&q=80",
+    categoryId: 5,
+    categoryName: "Heritage Restoration",
+    createdAt: "2025-04-10T10:00:00Z",
+  },
+];
+
+export const mockMyProjectImages: Record<number, ProjectImage[]> = {
+  101: [
+    { id: 1001, url: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80", displayOrder: 1 },
+    { id: 1002, url: "https://images.unsplash.com/photo-1600607687944-d00c5ca91dca?w=800&q=80", displayOrder: 2 },
+    { id: 1003, url: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&q=80", displayOrder: 3 },
+  ],
+  102: [
+    { id: 1021, url: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&q=80", displayOrder: 1 },
+    { id: 1022, url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800&q=80", displayOrder: 2 },
+  ],
+  103: [
+    { id: 1031, url: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&q=80", displayOrder: 1 },
+    { id: 1032, url: "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=800&q=80", displayOrder: 2 },
+    { id: 1033, url: "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=800&q=80", displayOrder: 3 },
+    { id: 1034, url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80", displayOrder: 4 },
+  ],
+  104: [
+    { id: 1041, url: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&q=80", displayOrder: 1 },
+    { id: 1042, url: "https://images.unsplash.com/photo-1600607688969-a5bfcd646154?w=800&q=80", displayOrder: 2 },
+  ],
+  105: [
+    { id: 1051, url: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&q=80", displayOrder: 1 },
+  ],
+  106: [
+    { id: 1061, url: "https://images.unsplash.com/photo-1416331108676-a22ccb276e35?w=800&q=80", displayOrder: 1 },
+    { id: 1062, url: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80", displayOrder: 2 },
+  ],
+  107: [
+    { id: 1071, url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80", displayOrder: 1 },
+  ],
+};
+
+export const mockMyContactRequests: EngineerContactRequest[] = [
+  {
+    id: 201,
+    clientName: "Samir Al-Kathiri",
+    clientEmail: "samir@client.ye",
+    clientPhone: "+967 73 112 3344",
+    message: "I loved your old city riad project. I have a similar heritage house in need of restoration. Can we schedule a consultation this week?",
+    isRead: true,
+    createdAt: "2025-06-10T09:15:00Z",
+  },
+  {
+    id: 202,
+    clientName: "Mona Jabir",
+    clientEmail: "mona.jabir@yahoo.com",
+    clientPhone: "+967 77 998 7766",
+    message: "We're renovating a 200 sqm apartment and would love your expertise on the living and dining areas. Budget is flexible for the right designer.",
+    isRead: true,
+    createdAt: "2025-06-12T11:00:00Z",
+  },
+  {
+    id: 203,
+    clientName: "Tariq Al-Asmar",
+    clientEmail: "tariq.asmar@businessmail.ye",
+    clientPhone: null,
+    message: "Looking for someone to redesign the reception area of our law firm office in Hadda. About 80 sqm, modern professional aesthetic.",
+    isRead: false,
+    createdAt: "2025-06-13T08:00:00Z",
+  },
+  {
+    id: 204,
+    clientName: "Rana Al-Mutawakel",
+    clientEmail: "rana.mutawakel@gmail.com",
+    clientPhone: "+967 71 555 0099",
+    message: "Your Al-Rawdah cafe project caught my eye — I'm opening a similar concept in Ma'in. Would you be interested in a similar project?",
+    isRead: false,
+    createdAt: "2025-06-13T10:30:00Z",
+  },
+  {
+    id: 205,
+    clientName: "Walid Qassim",
+    clientEmail: "walid.q@construction.ye",
+    clientPhone: "+967 73 244 5566",
+    message: null,
+    isRead: false,
+    createdAt: "2025-06-13T14:00:00Z",
+  },
+  {
+    id: 206,
+    clientName: "Suha Al-Hadhrami",
+    clientEmail: "suha.hadrami@outlook.com",
+    clientPhone: "+967 77 333 9900",
+    message: "We just moved into a new villa in the Hadda area and need help designing the master suite and two guest rooms. Can you send your portfolio PDF?",
+    isRead: true,
+    createdAt: "2025-06-08T16:20:00Z",
+  },
+  {
+    id: 207,
+    clientName: "Ibrahim Noman",
+    clientEmail: "ibrahim.noman@nomangroup.com",
+    clientPhone: "+967 73 101 2233",
+    message: "Our hospitality group is opening a boutique hotel in the old city. We're looking for an interior designer who understands the heritage context. Your riad project is exactly what we envision.",
+    isRead: false,
+    createdAt: "2025-06-11T13:45:00Z",
+  },
+  {
+    id: 208,
+    clientName: "Dalia Sharaf",
+    clientEmail: "dalia.sharaf@hotmail.com",
+    clientPhone: null,
+    message: "Hi, I saw your work on InteriorHub. I have a small studio apartment in Maeen that needs a full redesign. What are your rates?",
+    isRead: true,
+    createdAt: "2025-06-07T10:00:00Z",
+  },
+  {
+    id: 209,
+    clientName: "Yusuf Al-Badani",
+    clientEmail: "yusuf@badaniholdings.ye",
+    clientPhone: "+967 73 600 0011",
+    message: "We're building a mixed-use development and need an interior consultant for the retail ground floor — roughly 300 sqm. Can we meet to discuss the brief?",
+    isRead: false,
+    createdAt: "2025-06-12T09:00:00Z",
+  },
+  {
+    id: 210,
+    clientName: "Nadia Al-Sabri",
+    clientEmail: "nadia.sabri@gmail.com",
+    clientPhone: "+967 71 777 4422",
+    message: "Huge fan of your heritage work! I have a family property in the old city — a traditional tower house — that we want to convert into a guesthouse. Interested?",
+    isRead: false,
+    createdAt: "2025-06-13T07:30:00Z",
+  },
+];

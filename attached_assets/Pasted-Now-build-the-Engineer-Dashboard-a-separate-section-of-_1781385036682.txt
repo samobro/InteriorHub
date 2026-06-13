@@ -1,0 +1,54 @@
+Now build the Engineer Dashboard — a separate section of the same app 
+for authenticated engineers to manage their own profile and work.
+
+IMPORTANT: Follow the exact same patterns already used in the admin 
+dashboard — same component structure, same mock data approach with 
+// replace with real API call comments, same TypeScript interfaces 
+style, same loading/empty/error states pattern, same terracotta theme.
+
+Add these routes to the existing app (under /engineer/* prefix):
+
+PAGES NEEDED:
+
+1. /engineer/profile — My Profile
+   - View and edit: Full Name, Bio, City, Profile Image URL
+   - Read-only fields: Email, Trial Status (Active/Expired), 
+     Trial End Date, Account Status (Approved/Pending/Disabled)
+   - Save button triggers mock update with loading state
+
+2. /engineer/projects — My Projects
+   - Card grid showing engineer's own projects only
+   - Each card: cover image, title, category tag, date, 
+     Edit and Delete action buttons
+   - "Add New Project" button opens a modal with fields:
+     Title, Description, Category (dropdown from mock categories list)
+   - Edit project opens same modal pre-filled
+   - Delete shows confirmation dialog
+   - Pagination (6 cards per page)
+   - Empty state: "You haven't added any projects yet"
+
+3. /engineer/projects/:id/images — Project Images
+   - Accessible from each project card ("Manage Images" button)
+   - Shows current images as a grid with Display Order and Delete button
+   - "Add Image" input for image URL + display order number
+   - Reorder images by changing display order values
+
+4. /engineer/contact-requests — Contact Requests
+   - Table: Customer Name, Email, Phone, Message (expandable), 
+     Date, Read/Unread badge
+   - Unread requests visually highlighted
+   - Click row to mark as read and expand full message
+   - Filter: All / Unread only
+   - Empty state: "No contact requests yet"
+
+NAVIGATION: Add a separate sidebar layout for /engineer/* routes 
+(different from admin sidebar) with links to: My Profile, My Projects, 
+Contact Requests, Logout
+
+MOCK DATA: Add realistic engineer mock data to the existing mock.ts file:
+- 1 engineer profile object
+- 5-8 projects belonging to that engineer  
+- 10 contact requests (mix of read/unread)
+
+Keep all data flowing from mock.ts as single source of truth, 
+same pattern as admin pages.
