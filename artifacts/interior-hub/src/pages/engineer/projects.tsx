@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { Plus, Pencil, Trash2, ImageIcon, ImageOff, Calendar, Tag } from "lucide-react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { Plus, Pencil, Trash2, ImageIcon, ImageOff, Calendar, Upload } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -59,6 +59,20 @@ export default function EngineerProjects() {
   const [formLoading, setFormLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  // Local cover image state — file picked but not yet uploaded
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const coverFileRef = useRef<HTMLInputElement>(null);
+
+  const handleCoverFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // TODO: upload to Cloudinary and save returned URL
+    setCoverFile(file);
+    setCoverPreview(URL.createObjectURL(file));
+    setForm((f) => ({ ...f, coverImageUrl: "" })); // clear URL field when file chosen
+  };
+
   const totalCount = projects.length;
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
   const pageData = useMemo(
@@ -69,6 +83,8 @@ export default function EngineerProjects() {
   const openAdd = () => {
     setEditTarget(null);
     setForm(EMPTY_FORM);
+    setCoverFile(null);
+    setCoverPreview(null);
     setModalOpen(true);
   };
 
@@ -80,6 +96,8 @@ export default function EngineerProjects() {
       categoryId: String(project.categoryId),
       coverImageUrl: project.coverImageUrl ?? "",
     });
+    setCoverFile(null);
+    setCoverPreview(null);
     setModalOpen(true);
   };
 
@@ -89,6 +107,9 @@ export default function EngineerProjects() {
     if (!form.title.trim() || !form.categoryId) return;
     setFormLoading(true);
     await new Promise((r) => setTimeout(r, 600)); // TODO: replace with API call
+
+    // Prefer the local file preview URL; fallback to the typed URL
+    const resolvedCoverUrl = (coverPreview ?? form.coverImageUrl.trim()) || null;
 
     const category = mockCategories.find((c) => c.id === parseInt(form.categoryId));
     if (editTarget) {
@@ -101,7 +122,7 @@ export default function EngineerProjects() {
                 description: form.description.trim() || null,
                 categoryId: parseInt(form.categoryId),
                 categoryName: category?.name ?? p.categoryName,
-                coverImageUrl: form.coverImageUrl.trim() || null,
+                coverImageUrl: resolvedCoverUrl,
               }
             : p,
         ),
@@ -114,7 +135,7 @@ export default function EngineerProjects() {
         description: form.description.trim() || null,
         categoryId: parseInt(form.categoryId),
         categoryName: category?.name ?? "",
-        coverImageUrl: form.coverImageUrl.trim() || null,
+        coverImageUrl: resolvedCoverUrl,
         createdAt: new Date().toISOString(),
       };
       setProjects((prev) => [newProject, ...prev]);
@@ -240,15 +261,70 @@ export default function EngineerProjects() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="p-cover">Cover Image URL</Label>
-              <Input
-                id="p-cover"
-                value={form.coverImageUrl}
-                onChange={setField("coverImageUrl")}
-                placeholder="https://..."
-                type="url"
+            {/* Cover image — file upload + URL fallback */}
+            <div className="space-y-2">
+              <Label>Cover Image</Label>
+
+              {/* File upload button */}
+              <div
+                className="border-2 border-dashed rounded-lg p-4 flex flex-col items-center gap-2 cursor-pointer hover:border-primary/50 hover:bg-primary/[0.02] transition-colors"
+                onClick={() => coverFileRef.current?.click()}
+              >
+                {coverPreview ? (
+                  <img
+                    src={coverPreview}
+                    alt="Cover preview"
+                    className="w-full rounded-md aspect-video object-cover"
+                  />
+                ) : form.coverImageUrl ? (
+                  <img
+                    src={form.coverImageUrl}
+                    alt="Cover preview"
+                    className="w-full rounded-md aspect-video object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                  />
+                ) : (
+                  <>
+                    <Upload className="h-7 w-7 text-muted-foreground/50" />
+                    <p className="text-xs text-muted-foreground text-center">
+                      Click to choose a photo
+                      <br />
+                      <span className="text-muted-foreground/60">JPG, PNG or WebP</span>
+                    </p>
+                  </>
+                )}
+              </div>
+              <input
+                ref={coverFileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleCoverFileChange}
               />
+              {coverPreview && (
+                <p className="text-xs text-emerald-600">
+                  ✓ Photo selected — will be uploaded on save
+                </p>
+              )}
+
+              {/* Fallback URL input */}
+              <div className="space-y-1">
+                <Label htmlFor="p-cover" className="text-xs text-muted-foreground">
+                  Or paste image URL directly
+                </Label>
+                <Input
+                  id="p-cover"
+                  value={form.coverImageUrl}
+                  onChange={(e) => {
+                    setField("coverImageUrl")(e);
+                    setCoverFile(null);
+                    setCoverPreview(null);
+                  }}
+                  placeholder="https://..."
+                  type="url"
+                  className="h-8 text-xs"
+                />
+              </div>
               <p className="text-xs text-muted-foreground">
                 You can add more images after creating the project.
               </p>

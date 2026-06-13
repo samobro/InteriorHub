@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Save, Mail, Shield, Clock, CheckCircle2, XCircle, ImageIcon } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Save, Mail, Shield, Clock, CheckCircle2, XCircle, Camera, Upload } from "lucide-react";
 import { format } from "date-fns";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -37,6 +37,10 @@ export default function EngineerProfilePage() {
   const [profileImageUrl, setProfileImageUrl] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // Local photo state — file picked but not yet uploaded
+  const [localPhotoPreview, setLocalPhotoPreview] = useState<string | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+
   // Initialise form once profile loads
   useEffect(() => {
     if (profile) {
@@ -48,6 +52,24 @@ export default function EngineerProfilePage() {
     }
   }, [profile]);
 
+  // Photo file picker handler
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // TODO: upload to Cloudinary and save returned URL
+    const objectUrl = URL.createObjectURL(file);
+    setLocalPhotoPreview(objectUrl);
+  };
+
+  // The URL to actually display in the avatar (local preview wins over saved URL)
+  const displayedPhoto = localPhotoPreview ?? (profileImageUrl || null);
+  const initials = fullName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
   // Save handler — wire to PATCH /api/engineer/profile
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,7 +77,14 @@ export default function EngineerProfilePage() {
     await new Promise((r) => setTimeout(r, 700)); // TODO: replace with API call
     setProfile((prev) =>
       prev
-        ? { ...prev, fullName, city, phone: phone || null, bio: bio || null, profileImageUrl: profileImageUrl || null }
+        ? {
+            ...prev,
+            fullName,
+            city,
+            phone: phone || null,
+            bio: bio || null,
+            profileImageUrl: (localPhotoPreview ?? profileImageUrl) || null,
+          }
         : prev,
     );
     setSaving(false);
@@ -82,7 +111,69 @@ export default function EngineerProfilePage() {
               <CardTitle className="text-base">Public Profile</CardTitle>
               <CardDescription>Visible to clients browsing the platform.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-5">
+
+              {/* ── Profile photo ── */}
+              <div className="flex items-center gap-5">
+                {/* Avatar circle */}
+                <div className="relative shrink-0">
+                  <div className="h-20 w-20 rounded-full border-2 border-border overflow-hidden bg-primary/10 flex items-center justify-center">
+                    {displayedPhoto ? (
+                      <img
+                        src={displayedPhoto}
+                        alt="Profile"
+                        className="h-full w-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      <span className="text-primary font-bold text-xl">{initials}</span>
+                    )}
+                  </div>
+                  {/* Small camera badge */}
+                  <button
+                    type="button"
+                    onClick={() => photoInputRef.current?.click()}
+                    className="absolute bottom-0 right-0 h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow border-2 border-card hover:bg-primary/90 transition-colors"
+                    title="Change photo"
+                  >
+                    <Camera className="h-3 w-3" />
+                  </button>
+                </div>
+
+                {/* Text + button */}
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">{fullName || "Your name"}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {localPhotoPreview
+                      ? "New photo selected — save to confirm"
+                      : "JPG, PNG or WebP · max 5 MB"}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs mt-1"
+                    onClick={() => photoInputRef.current?.click()}
+                  >
+                    <Upload className="mr-1.5 h-3 w-3" />
+                    Change Photo
+                  </Button>
+                  {/* Hidden file input */}
+                  <input
+                    ref={photoInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handlePhotoChange}
+                  />
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* ── Text fields ── */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="fullName">Full Name</Label>
@@ -128,26 +219,22 @@ export default function EngineerProfilePage() {
                 <p className="text-xs text-muted-foreground">{bio.length}/600 characters</p>
               </div>
 
+              {/* Fallback URL input */}
               <div className="space-y-1.5">
-                <Label htmlFor="profileImageUrl" className="flex items-center gap-1.5">
-                  <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                  Profile Image URL
+                <Label htmlFor="profileImageUrl" className="text-muted-foreground text-xs">
+                  Or paste profile image URL directly
                 </Label>
                 <Input
                   id="profileImageUrl"
                   value={profileImageUrl}
-                  onChange={(e) => setProfileImageUrl(e.target.value)}
+                  onChange={(e) => {
+                    setProfileImageUrl(e.target.value);
+                    setLocalPhotoPreview(null); // clear local pick if URL is typed
+                  }}
                   placeholder="https://..."
                   type="url"
+                  className="h-8 text-xs"
                 />
-                {profileImageUrl && (
-                  <img
-                    src={profileImageUrl}
-                    alt="Profile preview"
-                    className="mt-2 h-20 w-20 rounded-full object-cover border"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                  />
-                )}
               </div>
             </CardContent>
           </Card>
@@ -285,7 +372,16 @@ function ProfileSkeleton() {
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-4">
           <Card>
-            <CardContent className="pt-6 space-y-4">
+            <CardContent className="pt-6 space-y-5">
+              <div className="flex items-center gap-5">
+                <Skeleton className="h-20 w-20 rounded-full shrink-0" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-48" />
+                  <Skeleton className="h-8 w-28" />
+                </div>
+              </div>
+              <Skeleton className="h-px w-full" />
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2"><Skeleton className="h-4 w-20" /><Skeleton className="h-9 w-full" /></div>
                 <div className="space-y-2"><Skeleton className="h-4 w-16" /><Skeleton className="h-9 w-full" /></div>

@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "wouter";
-import { Plus, Trash2, ArrowLeft, ImageOff, GripVertical, Save } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, ImageOff, GripVertical, Save, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,19 +51,38 @@ export default function ProjectImages() {
   const [editingOrderId, setEditingOrderId] = useState<number | null>(null);
   const [editingOrderValue, setEditingOrderValue] = useState("");
 
+  // Local file state — file picked but not yet uploaded
+  const [newFile, setNewFile] = useState<File | null>(null);
+  const [newFilePreview, setNewFilePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // TODO: upload to Cloudinary and save returned URL
+    setNewFile(file);
+    setNewFilePreview(URL.createObjectURL(file));
+    setNewUrl(""); // clear URL field when file chosen
+  };
+
+  // The resolved URL to use when adding — local preview wins over typed URL
+  const resolvedNewUrl = newFilePreview ?? newUrl.trim();
+
   // Add image — wire to POST /api/engineer/projects/:id/images
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newUrl.trim()) return;
+    if (!resolvedNewUrl) return;
     setAddLoading(true);
     await new Promise((r) => setTimeout(r, 500)); // TODO: replace with API call
     const order = parseInt(newOrder) || (images.length + 1);
-    const newImage: ProjectImage = { id: Date.now(), url: newUrl.trim(), displayOrder: order };
+    const newImage: ProjectImage = { id: Date.now(), url: resolvedNewUrl, displayOrder: order };
     setImages((prev) =>
       [...prev, newImage].sort((a, b) => a.displayOrder - b.displayOrder),
     );
     setNewUrl("");
     setNewOrder("");
+    setNewFile(null);
+    setNewFilePreview(null);
     setAddLoading(false);
     toast({ title: "Image added" });
   };
@@ -161,21 +180,66 @@ export default function ProjectImages() {
           >
             <h2 className="text-sm font-semibold">Add Image</h2>
 
+            {/* File upload drop zone */}
             <div className="space-y-1.5">
-              <Label htmlFor="img-url">Image URL</Label>
+              <Label>Upload File</Label>
+              <div
+                className="border-2 border-dashed rounded-lg p-4 flex flex-col items-center gap-2 cursor-pointer hover:border-primary/50 hover:bg-primary/[0.02] transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {newFilePreview ? (
+                  <img
+                    src={newFilePreview}
+                    alt="Preview"
+                    className="w-full rounded-md aspect-video object-cover"
+                  />
+                ) : (
+                  <>
+                    <Upload className="h-7 w-7 text-muted-foreground/50" />
+                    <p className="text-xs text-muted-foreground text-center">
+                      Click to choose a photo
+                      <br />
+                      <span className="text-muted-foreground/60">JPG, PNG or WebP</span>
+                    </p>
+                  </>
+                )}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+              {newFilePreview && (
+                <p className="text-xs text-emerald-600">
+                  ✓ Photo selected — will be uploaded on save
+                </p>
+              )}
+            </div>
+
+            {/* Fallback URL input */}
+            <div className="space-y-1.5">
+              <Label htmlFor="img-url" className="text-xs text-muted-foreground">
+                Or paste image URL directly
+              </Label>
               <Input
                 id="img-url"
                 value={newUrl}
-                onChange={(e) => setNewUrl(e.target.value)}
+                onChange={(e) => {
+                  setNewUrl(e.target.value);
+                  setNewFile(null);
+                  setNewFilePreview(null);
+                }}
                 placeholder="https://..."
                 type="url"
-                required
+                className="h-8 text-xs"
               />
-              {newUrl && (
+              {newUrl && !newFilePreview && (
                 <img
                   src={newUrl}
                   alt="Preview"
-                  className="mt-1.5 rounded-lg aspect-video object-cover w-full border"
+                  className="rounded-lg aspect-video object-cover w-full border"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                 />
               )}
@@ -196,7 +260,7 @@ export default function ProjectImages() {
               </p>
             </div>
 
-            <Button type="submit" className="w-full" disabled={addLoading || !newUrl.trim()}>
+            <Button type="submit" className="w-full" disabled={addLoading || !resolvedNewUrl}>
               <Plus className="mr-2 h-4 w-4" />
               {addLoading ? "Adding..." : "Add Image"}
             </Button>
