@@ -27,6 +27,11 @@ public sealed class InteriorHubProfile : Profile
             .ForMember(dest => dest.EngineerName, opt => opt.MapFrom(src => src.Engineer != null ? src.Engineer.FullName : string.Empty))
             .ForMember(dest => dest.ImageUrls, opt => opt.MapFrom(src => src.ProjectImages.OrderBy(x => x.DisplayOrder).Select(x => x.ImageUrl).ToList()));
 
+        CreateMap<Project, ProjectAdminReadDto>()
+            .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category != null ? src.Category.Name : string.Empty))
+            .ForMember(dest => dest.EngineerName, opt => opt.MapFrom(src => src.Engineer != null ? src.Engineer.FullName : string.Empty))
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Engineer != null ? src.Engineer.Status.ToString() : "Unknown"));
+
         CreateMap<Project, ProjectDetailDto>()
             .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category != null ? src.Category.Name : string.Empty))
             .ForMember(dest => dest.EngineerName, opt => opt.MapFrom(src => src.Engineer != null ? src.Engineer.FullName : string.Empty))

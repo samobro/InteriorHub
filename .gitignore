@@ -13,6 +13,8 @@ packages/
 node_modules/
 src/**/bin/
 src/**/obj/
+frontend/node_modules/
+frontend/dist/
 
 # Local secrets
 src/**/appsettings.Development.json

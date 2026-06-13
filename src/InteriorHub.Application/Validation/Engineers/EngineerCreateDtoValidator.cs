@@ -9,6 +9,7 @@ public sealed class EngineerCreateDtoValidator : AbstractValidator<EngineerCreat
     {
         RuleFor(x => x.FullName).NotEmpty().MaximumLength(200);
         RuleFor(x => x.Bio).NotEmpty();
+        RuleFor(x => x.Specialization).NotEmpty().MaximumLength(200);
         RuleFor(x => x.ProfileImageUrl).MaximumLength(1000).When(x => !string.IsNullOrWhiteSpace(x.ProfileImageUrl));
         RuleFor(x => x.City).NotEmpty().MaximumLength(120);
         RuleFor(x => x.PhoneNumber).MaximumLength(50).When(x => !string.IsNullOrWhiteSpace(x.PhoneNumber));

@@ -6,10 +6,17 @@ using Microsoft.AspNetCore.Mvc;
 namespace InteriorHub.API.Controllers;
 
 [ApiController]
-[Authorize]
+[Authorize(Roles = "Admin")]
 [Route("api/admin/categories")]
 public sealed class AdminCategoriesController(ICategoryService categoryService) : BaseApiController
 {
+    [HttpGet]
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+    {
+        // TODO: Add real admin authentication/authorization wiring.
+        return Ok(await categoryService.GetAllAsync(cancellationToken));
+    }
+
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CategoryCreateDto dto, CancellationToken cancellationToken)
     {

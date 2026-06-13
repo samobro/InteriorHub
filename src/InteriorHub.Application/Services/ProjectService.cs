@@ -22,7 +22,7 @@ public sealed class ProjectService(
             .Include(x => x.Category)
             .Include(x => x.Engineer)
             .Include(x => x.ProjectImages)
-            .Where(x => x.Engineer != null && x.Engineer.IsApproved);
+            .Where(x => x.Engineer != null && x.Engineer.Status == EngineerStatus.Active);
 
         if (categoryId.HasValue)
         {
@@ -46,13 +46,37 @@ public sealed class ProjectService(
         };
     }
 
+    public async Task<PagedResult<ProjectReadDto>> GetPublicByEngineerAsync(int engineerId, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
+    {
+        IQueryable<Project> query = unitOfWork.Projects.Query()
+            .Include(x => x.Category)
+            .Include(x => x.Engineer)
+            .Include(x => x.ProjectImages)
+            .Where(x => x.EngineerId == engineerId && x.Engineer != null && x.Engineer.Status == EngineerStatus.Active)
+            .OrderByDescending(x => x.CreatedAt);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var items = await query
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return new PagedResult<ProjectReadDto>
+        {
+            Items = mapper.Map<IReadOnlyList<ProjectReadDto>>(items),
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
+    }
+
     public async Task<ProjectDetailDto> GetPublicByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var project = await unitOfWork.Projects.Query()
             .Include(x => x.Category)
             .Include(x => x.Engineer)
             .Include(x => x.ProjectImages.OrderBy(image => image.DisplayOrder))
-            .FirstOrDefaultAsync(x => x.Id == id && x.Engineer != null && x.Engineer.IsApproved, cancellationToken)
+            .FirstOrDefaultAsync(x => x.Id == id && x.Engineer != null && x.Engineer.Status == EngineerStatus.Active, cancellationToken)
             ?? throw new NotFoundException($"Project {id} was not found.");
 
         return mapper.Map<ProjectDetailDto>(project);
@@ -82,6 +106,28 @@ public sealed class ProjectService(
         };
     }
 
+    public async Task<PagedResult<ProjectAdminReadDto>> GetAllAdminAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var query = unitOfWork.Projects.Query()
+            .Include(x => x.Category)
+            .Include(x => x.Engineer)
+            .OrderByDescending(x => x.CreatedAt);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var items = await query
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return new PagedResult<ProjectAdminReadDto>
+        {
+            Items = mapper.Map<IReadOnlyList<ProjectAdminReadDto>>(items),
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
+    }
+
     public async Task<ProjectDetailDto> CreateAsync(int engineerId, ProjectCreateDto dto, CancellationToken cancellationToken = default)
     {
         await createValidator.ValidateAndThrowAsync(dto, cancellationToken);
@@ -103,6 +149,17 @@ public sealed class ProjectService(
 
         await unitOfWork.Projects.AddAsync(entity);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(dto.ImageUrl))
+        {
+            await unitOfWork.ProjectImages.AddAsync(new ProjectImage
+            {
+                ProjectId = entity.Id,
+                ImageUrl = dto.ImageUrl,
+                DisplayOrder = 0
+            });
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+        }
 
         return await GetPublicByIdAsync(entity.Id, cancellationToken);
     }
@@ -131,6 +188,31 @@ public sealed class ProjectService(
         unitOfWork.Projects.Update(project);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
+        if (!string.IsNullOrWhiteSpace(dto.ImageUrl))
+        {
+            var existingImage = await unitOfWork.ProjectImages.Query()
+                .Where(x => x.ProjectId == project.Id)
+                .OrderBy(x => x.DisplayOrder)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (existingImage is null)
+            {
+                await unitOfWork.ProjectImages.AddAsync(new ProjectImage
+                {
+                    ProjectId = project.Id,
+                    ImageUrl = dto.ImageUrl,
+                    DisplayOrder = 0
+                });
+            }
+            else
+            {
+                existingImage.ImageUrl = dto.ImageUrl;
+                unitOfWork.ProjectImages.Update(existingImage);
+            }
+
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+
         return await GetPublicByIdAsync(project.Id, cancellationToken);
     }
 
@@ -143,6 +225,15 @@ public sealed class ProjectService(
         {
             throw new ForbiddenException("You can only delete your own projects.");
         }
+
+        unitOfWork.Projects.Remove(project);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task DeleteAdminAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var project = await unitOfWork.Projects.GetByIdAsync(id)
+            ?? throw new NotFoundException($"Project {id} was not found.");
 
         unitOfWork.Projects.Remove(project);
         await unitOfWork.SaveChangesAsync(cancellationToken);

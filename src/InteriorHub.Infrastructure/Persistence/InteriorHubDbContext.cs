@@ -19,15 +19,22 @@ public sealed class InteriorHubDbContext(DbContextOptions<InteriorHubDbContext> 
             entity.HasKey(x => x.Id);
             entity.Property(x => x.FullName).HasMaxLength(200).IsRequired();
             entity.Property(x => x.Bio).HasColumnType("text").IsRequired();
+            entity.Property(x => x.Specialization).HasMaxLength(200).IsRequired();
             entity.Property(x => x.ProfileImageUrl).HasMaxLength(1000);
             entity.Property(x => x.City).HasMaxLength(120).IsRequired();
             entity.Property(x => x.PhoneNumber).HasMaxLength(50);
             entity.Property(x => x.Email).HasMaxLength(256).IsRequired();
+            entity.Property(x => x.PasswordHash).HasMaxLength(500).IsRequired().HasDefaultValue("");
+            entity.Property(x => x.Role).HasMaxLength(50).IsRequired().HasDefaultValue("Engineer");
+            entity.Property(x => x.Status)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasDefaultValue(EngineerStatus.Pending);
             entity.Property(x => x.IsApproved).HasDefaultValue(false);
             entity.Property(x => x.IsTrialActive).HasDefaultValue(false);
             entity.Property(x => x.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.HasIndex(x => x.Email).IsUnique();
-            entity.HasIndex(x => x.IsApproved);
+            entity.HasIndex(x => x.Status);
         });
 
         modelBuilder.Entity<Category>(entity =>
