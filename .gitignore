@@ -47,3 +47,23 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# .NET / C#
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.cache
+*.log
+*.pdb
+*.svclog
+TestResults/
+packages/
+src/**/bin/
+src/**/obj/
+frontend/node_modules/
+frontend/dist/
+
+# Local secrets
+src/**/appsettings.Development.json
