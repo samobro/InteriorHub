@@ -10,18 +10,36 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { mockMyProfile } from "@/data/mock";
+import { apiClient } from "@/lib/apiClient";
 import type { EngineerProfile } from "@/types";
 
-// ─── Data source (replace with real API calls) ───────────────────────────────
+// ─── Data source — wired to /api/me/profile ──────────────────────────────────
 function useMyProfile() {
   const [data, setData] = useState<EngineerProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   useEffect(() => {
-    const t = setTimeout(() => { setData(mockMyProfile); setIsLoading(false); }, 500);
-    return () => clearTimeout(t);
+    apiClient
+      .get("/api/me/profile")
+      .then((res) => setData(mapProfileResponse(res.data)))
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
   }, []);
   return { data, setData, isLoading };
+}
+
+// Map backend DTO field names to frontend type names
+function mapProfileResponse(dto: any): EngineerProfile {
+  return {
+    id: dto.id,
+    fullName: dto.fullName,
+    email: dto.email,
+    city: dto.city,
+    phone: dto.phoneNumber ?? dto.phone ?? null,
+    bio: dto.bio ?? null,
+    profileImageUrl: dto.profileImageUrl ?? null,
+    status: dto.isApproved ? "approved" : "pending",
+    trialEndsAt: dto.trialEndsAt ?? null,
+  };
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -70,25 +88,34 @@ export default function EngineerProfilePage() {
     .slice(0, 2)
     .toUpperCase();
 
-  // Save handler — wire to PATCH /api/engineer/profile
+  // Save handler — wired to PUT /api/me/profile
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    await new Promise((r) => setTimeout(r, 700)); // TODO: replace with API call
-    setProfile((prev) =>
-      prev
-        ? {
-            ...prev,
-            fullName,
-            city,
-            phone: phone || null,
-            bio: bio || null,
-            profileImageUrl: (localPhotoPreview ?? profileImageUrl) || null,
-          }
-        : prev,
-    );
-    setSaving(false);
-    toast({ title: "Profile updated successfully" });
+    try {
+      const dto = {
+        fullName,
+        city,
+        phoneNumber: phone || null,
+        bio: bio || "",
+        specialization: "",
+        profileImageUrl: (localPhotoPreview ?? profileImageUrl) || null,
+        email: profile?.email ?? "",
+        isTrialActive: false,
+        trialEndsAt: null,
+      };
+      const res = await apiClient.put("/api/me/profile", dto);
+      setProfile(mapProfileResponse(res.data));
+      toast({ title: "Profile updated successfully" });
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Failed to update profile",
+        description: err.response?.data?.message || "Something went wrong.",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (isLoading) return <ProfileSkeleton />;

@@ -1,44 +1,73 @@
 import { useState, useEffect, useMemo } from "react";
 import { Search, UserX, UserCheck, Eye, Phone, Mail, MapPin, Calendar, Clock } from "lucide-react";
 import { format } from "date-fns";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import {
-  Sheet, SheetContent, SheetHeader, SheetTitle,
-} from "@/components/ui/sheet";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/status-badge";
 import { PaginationBar } from "@/components/pagination-bar";
 import { EmptyState } from "@/components/empty-state";
-import { mockEngineers } from "@/data/mock";
+import { apiClient } from "@/lib/apiClient";
+import { useToast } from "@/hooks/use-toast";
 import type { Engineer, EngineerStatus } from "@/types";
 
 const PAGE_SIZE = 6;
 
-export default function Engineers() {
-  // ── Local engineer state — updated optimistically on status changes ──────────
-  // Replace: swap mockEngineers for the API response; handleUpdateStatus
-  // should call PATCH /api/engineers/:id/status then update this state.
-  const [engineers, setEngineers] = useState<Engineer[]>(mockEngineers);
+function mapStatusToFrontend(status: number | string): "pending" | "approved" | "disabled" {
+  if (status === 0 || status === "Pending") return "pending";
+  if (status === 1 || status === "Active" || status === "approved") return "approved";
+  return "disabled";
+}
 
+function mapEngineer(dto: any): Engineer {
+  return {
+    id: dto.id,
+    fullName: dto.fullName,
+    city: dto.city,
+    email: dto.email,
+    phone: dto.phoneNumber ?? dto.phone ?? null,
+    bio: dto.bio ?? null,
+    profileImageUrl: dto.profileImageUrl ?? null,
+    status: mapStatusToFrontend(dto.status),
+    trialEndsAt: dto.trialEndsAt ?? null,
+    projectsCount: dto.projectsCount ?? 0,
+    createdAt: dto.createdAt
+  };
+}
+
+export default function Engineers() {
+  const [engineers, setEngineers] = useState<Engineer[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [selectedEngineer, setSelectedEngineer] = useState<Engineer | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
-  // Simulate initial load
+  const fetchEngineers = () => {
+    setIsLoading(true);
+    apiClient.get("/api/admin/engineers", { params: { pageSize: 1000 } })
+      .then((res) => {
+        const items = res.data.items ?? res.data;
+        if (Array.isArray(items)) {
+          setEngineers(items.map(mapEngineer));
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch engineers", err);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  };
+
   useEffect(() => {
-    const t = setTimeout(() => setIsLoading(false), 400);
-    return () => clearTimeout(t);
+    fetchEngineers();
   }, []);
 
   // Reset page when filters change
@@ -71,15 +100,29 @@ export default function Engineers() {
   const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   // ── Status update: optimistic local mutation ─────────────────────────────────
-  // TODO: replace the setEngineers call with: await PATCH /api/engineers/:id/status
-  const handleUpdateStatus = (engineer: Engineer, newStatus: EngineerStatus) => {
-    setEngineers((prev) =>
-      prev.map((e) => (e.id === engineer.id ? { ...e, status: newStatus } : e)),
-    );
-    // Keep the side-panel in sync if it's showing the same engineer
-    setSelectedEngineer((prev) =>
-      prev?.id === engineer.id ? { ...prev, status: newStatus } : prev,
-    );
+  const handleUpdateStatus = async (engineer: Engineer, newStatus: EngineerStatus) => {
+    try {
+      if (newStatus === "approved") {
+        await apiClient.put(`/api/admin/engineers/${engineer.id}/approve`);
+      } else if (newStatus === "disabled") {
+        await apiClient.put(`/api/admin/engineers/${engineer.id}/disable`);
+      }
+      setEngineers((prev) =>
+        prev.map((e) => (e.id === engineer.id ? { ...e, status: newStatus } : e)),
+      );
+      setSelectedEngineer((prev) =>
+        prev?.id === engineer.id ? { ...prev, status: newStatus } : prev,
+      );
+      toast({
+        title: `Engineer ${newStatus === "approved" ? "approved" : "disabled"} successfully`
+      });
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Failed to update status",
+        description: err.response?.data?.message || "Something went wrong."
+      });
+    }
   };
 
   return (

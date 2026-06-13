@@ -7,10 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/empty-state";
 import { useToast } from "@/hooks/use-toast";
-import { mockMyProjects, mockMyProjectImages } from "@/data/mock";
+import { apiClient } from "@/lib/apiClient";
 import type { ProjectImage, EngineerProject } from "@/types";
 
-// ─── Data source (replace with real API calls) ───────────────────────────────
+// ─── Data source — wired to /api/me/projects/:id ───────────────────────────────
 function useProjectImages(projectId: number) {
   const [project, setProject] = useState<EngineerProject | null>(null);
   const [images, setImages] = useState<ProjectImage[]>([]);
@@ -18,16 +18,34 @@ function useProjectImages(projectId: number) {
 
   useEffect(() => {
     setIsLoading(true);
-    const t = setTimeout(() => {
-      const found = mockMyProjects.find((p) => p.id === projectId) ?? null;
-      setProject(found);
-      const imgs = (mockMyProjectImages[projectId] ?? []).slice().sort(
-        (a, b) => a.displayOrder - b.displayOrder,
-      );
-      setImages(imgs);
-      setIsLoading(false);
-    }, 500);
-    return () => clearTimeout(t);
+    Promise.all([
+      apiClient.get(`/api/me/projects/${projectId}`),
+      apiClient.get(`/api/me/projects/${projectId}/images`)
+    ])
+      .then(([projRes, imgRes]) => {
+        const p = projRes.data;
+        setProject({
+          id: p.id,
+          title: p.title,
+          description: p.description ?? null,
+          coverImageUrl: p.imageUrl ?? p.coverImageUrl ?? (p.imageUrls && p.imageUrls.length > 0 ? p.imageUrls[0] : null),
+          categoryId: p.categoryId,
+          categoryName: p.categoryName ?? "",
+          createdAt: p.createdAt,
+        });
+        const imgs = (imgRes.data ?? []).map((img: any) => ({
+          id: img.id,
+          url: img.imageUrl,
+          displayOrder: img.displayOrder,
+        })).sort((a: any, b: any) => a.displayOrder - b.displayOrder);
+        setImages(imgs);
+      })
+      .catch((err) => {
+        console.error("Failed to load project images", err);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }, [projectId]);
 
   return { project, images, setImages, isLoading };
@@ -68,44 +86,75 @@ export default function ProjectImages() {
   // The resolved URL to use when adding — local preview wins over typed URL
   const resolvedNewUrl = newFilePreview ?? newUrl.trim();
 
-  // Add image — wire to POST /api/engineer/projects/:id/images
+  // Add image — wired to POST /api/me/projects/:id/images
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resolvedNewUrl) return;
     setAddLoading(true);
-    await new Promise((r) => setTimeout(r, 500)); // TODO: replace with API call
     const order = parseInt(newOrder) || (images.length + 1);
-    const newImage: ProjectImage = { id: Date.now(), url: resolvedNewUrl, displayOrder: order };
-    setImages((prev) =>
-      [...prev, newImage].sort((a, b) => a.displayOrder - b.displayOrder),
-    );
-    setNewUrl("");
-    setNewOrder("");
-    setNewFile(null);
-    setNewFilePreview(null);
-    setAddLoading(false);
-    toast({ title: "Image added" });
+    try {
+      const res = await apiClient.post(`/api/me/projects/${projectId}/images`, [
+        { imageUrl: resolvedNewUrl, displayOrder: order }
+      ]);
+      const added = (res.data ?? []).map((img: any) => ({
+        id: img.id,
+        url: img.imageUrl,
+        displayOrder: img.displayOrder
+      }));
+      setImages((prev) =>
+        [...prev, ...added].sort((a, b) => a.displayOrder - b.displayOrder)
+      );
+      setNewUrl("");
+      setNewOrder("");
+      setNewFile(null);
+      setNewFilePreview(null);
+      toast({ title: "Image added" });
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Failed to add image",
+        description: err.response?.data?.message || "Something went wrong."
+      });
+    } finally {
+      setAddLoading(false);
+    }
   };
 
-  // Save display order edit — wire to PATCH /api/engineer/projects/:id/images/:imageId
+  // Save display order edit — wired to PUT /api/me/projects/:id/images/:imageId/order
   const commitOrderEdit = async (imageId: number) => {
     const parsed = parseInt(editingOrderValue);
     if (isNaN(parsed) || parsed < 1) { setEditingOrderId(null); return; }
-    await new Promise((r) => setTimeout(r, 200)); // TODO: replace with API call
-    setImages((prev) =>
-      prev
-        .map((img) => (img.id === imageId ? { ...img, displayOrder: parsed } : img))
-        .sort((a, b) => a.displayOrder - b.displayOrder),
-    );
-    setEditingOrderId(null);
-    toast({ title: "Display order updated" });
+    try {
+      await apiClient.put(`/api/me/projects/${projectId}/images/${imageId}/order?displayOrder=${parsed}`);
+      setImages((prev) =>
+        prev
+          .map((img) => (img.id === imageId ? { ...img, displayOrder: parsed } : img))
+          .sort((a, b) => a.displayOrder - b.displayOrder)
+      );
+      setEditingOrderId(null);
+      toast({ title: "Display order updated" });
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Failed to update order",
+        description: err.response?.data?.message || "Something went wrong."
+      });
+    }
   };
 
-  // Delete image — wire to DELETE /api/engineer/projects/:id/images/:imageId
+  // Delete image — wired to DELETE /api/me/projects/:id/images/:imageId
   const handleDelete = async (imageId: number) => {
-    await new Promise((r) => setTimeout(r, 300)); // TODO: replace with API call
-    setImages((prev) => prev.filter((img) => img.id !== imageId));
-    toast({ title: "Image removed", variant: "destructive" });
+    try {
+      await apiClient.delete(`/api/me/projects/${projectId}/images/${imageId}`);
+      setImages((prev) => prev.filter((img) => img.id !== imageId));
+      toast({ title: "Image removed", variant: "destructive" });
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Failed to delete image",
+        description: err.response?.data?.message || "Something went wrong."
+      });
+    }
   };
 
   if (isLoading) return <ImagesSkeleton />;

@@ -22,11 +22,28 @@ import EngineerContactRequests from "@/pages/engineer/contact-requests";
 
 import NotFound from "@/pages/not-found";
 
+// Auth pages
+import Login from "@/pages/auth/login";
+import Register from "@/pages/auth/register";
+
+// Context
+import { AuthProvider } from "@/context/AuthContext";
+
 const queryClient = new QueryClient();
 
 function Router() {
   const [location] = useLocation();
   const isEngineerRoute = location.startsWith("/engineer");
+  const isAuthRoute = location === "/login" || location === "/register";
+
+  if (isAuthRoute) {
+    return (
+      <Switch>
+        <Route path="/login" component={Login} />
+        <Route path="/register" component={Register} />
+      </Switch>
+    );
+  }
 
   if (isEngineerRoute) {
     return (
@@ -62,7 +79,9 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
+          <AuthProvider>
+            <Router />
+          </AuthProvider>
         </WouterRouter>
         <Toaster />
       </TooltipProvider>

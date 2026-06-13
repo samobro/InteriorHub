@@ -9,25 +9,29 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/empty-state";
 import { PaginationBar } from "@/components/pagination-bar";
-import { mockMyContactRequests } from "@/data/mock";
+import { apiClient } from "@/lib/apiClient";
 import type { EngineerContactRequest } from "@/types";
 
 const PAGE_SIZE = 8;
 
-// ─── Data source (replace with real API call) ────────────────────────────────
+// ─── Data source — wired to /api/me/contact-requests ────────────────────────
 function useMyContactRequests() {
   const [data, setData] = useState<EngineerContactRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   useEffect(() => {
-    const t = setTimeout(() => {
-      setData(
-        [...mockMyContactRequests].sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-        ),
-      );
-      setIsLoading(false);
-    }, 500);
-    return () => clearTimeout(t);
+    apiClient
+      .get("/api/me/contact-requests")
+      .then((res) => {
+        const items = res.data.items ?? res.data;
+        const mapped = Array.isArray(items) ? items : [];
+        setData(
+          [...mapped].sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          ),
+        );
+      })
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
   }, []);
   return { data, setData, isLoading };
 }

@@ -106,6 +106,19 @@ public sealed class ProjectService(
         };
     }
 
+    public async Task<ProjectReadDto> GetMyProjectByIdAsync(int engineerId, int id, CancellationToken cancellationToken = default)
+    {
+        var project = await unitOfWork.Projects.Query()
+            .Include(x => x.Category)
+            .Include(x => x.Engineer)
+            .Include(x => x.ProjectImages)
+            .FirstOrDefaultAsync(x => x.Id == id && x.EngineerId == engineerId, cancellationToken)
+            ?? throw new NotFoundException($"Project {id} was not found.");
+
+        return mapper.Map<ProjectReadDto>(project);
+    }
+
+
     public async Task<PagedResult<ProjectAdminReadDto>> GetAllAdminAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = unitOfWork.Projects.Query()
@@ -275,6 +288,44 @@ public sealed class ProjectService(
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return mapper.Map<IReadOnlyList<ProjectImageReadDto>>(entities.OrderBy(x => x.DisplayOrder).ToList());
+    }
+
+    public async Task<IReadOnlyList<ProjectImageReadDto>> GetProjectImagesAsync(int engineerId, int projectId, CancellationToken cancellationToken = default)
+    {
+        var project = await unitOfWork.Projects.GetByIdAsync(projectId)
+            ?? throw new NotFoundException($"Project {projectId} was not found.");
+
+        if (project.EngineerId != engineerId)
+        {
+            throw new ForbiddenException("You do not have access to this project's images.");
+        }
+
+        var images = await unitOfWork.ProjectImages.Query()
+            .Where(x => x.ProjectId == projectId)
+            .OrderBy(x => x.DisplayOrder)
+            .ToListAsync(cancellationToken);
+
+        return mapper.Map<IReadOnlyList<ProjectImageReadDto>>(images);
+    }
+
+    public async Task UpdateImageDisplayOrderAsync(int engineerId, int projectId, int imageId, int displayOrder, CancellationToken cancellationToken = default)
+    {
+        var project = await unitOfWork.Projects.Query()
+            .Include(x => x.ProjectImages)
+            .FirstOrDefaultAsync(x => x.Id == projectId, cancellationToken)
+            ?? throw new NotFoundException($"Project {projectId} was not found.");
+
+        if (project.EngineerId != engineerId)
+        {
+            throw new ForbiddenException("You can only modify your own projects.");
+        }
+
+        var image = project.ProjectImages.FirstOrDefault(x => x.Id == imageId)
+            ?? throw new NotFoundException($"Project image {imageId} was not found.");
+
+        image.DisplayOrder = displayOrder;
+        unitOfWork.ProjectImages.Update(image);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
     public async Task DeleteImageAsync(int engineerId, int projectId, int imageId, CancellationToken cancellationToken = default)

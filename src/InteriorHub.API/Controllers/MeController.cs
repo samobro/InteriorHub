@@ -31,6 +31,11 @@ public sealed class MeController(
     public async Task<IActionResult> GetProjects([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, CancellationToken cancellationToken = default)
         => Ok(await projectService.GetMyProjectsAsync(GetCurrentEngineerId(), pageNumber, pageSize, cancellationToken));
 
+    [HttpGet("projects/{id:int}")]
+    public async Task<IActionResult> GetProjectById([FromRoute] int id, CancellationToken cancellationToken = default)
+        => Ok(await projectService.GetMyProjectByIdAsync(GetCurrentEngineerId(), id, cancellationToken));
+
+
     [HttpPost("projects")]
     public async Task<IActionResult> CreateProject([FromBody] ProjectCreateDto dto, CancellationToken cancellationToken = default)
         => Ok(await projectService.CreateAsync(GetCurrentEngineerId(), dto, cancellationToken));
@@ -49,6 +54,17 @@ public sealed class MeController(
     [HttpPost("projects/{id:int}/images")]
     public async Task<IActionResult> AddProjectImages([FromRoute] int id, [FromBody] List<ProjectImageCreateDto> images, CancellationToken cancellationToken = default)
         => Ok(await projectService.AddImagesAsync(GetCurrentEngineerId(), id, images, cancellationToken));
+
+    [HttpGet("projects/{id:int}/images")]
+    public async Task<IActionResult> GetProjectImages([FromRoute] int id, CancellationToken cancellationToken = default)
+        => Ok(await projectService.GetProjectImagesAsync(GetCurrentEngineerId(), id, cancellationToken));
+
+    [HttpPut("projects/{id:int}/images/{imageId:int}/order")]
+    public async Task<IActionResult> UpdateProjectImageOrder([FromRoute] int id, [FromRoute] int imageId, [FromQuery] int displayOrder, CancellationToken cancellationToken = default)
+    {
+        await projectService.UpdateImageDisplayOrderAsync(GetCurrentEngineerId(), id, imageId, displayOrder, cancellationToken);
+        return NoContent();
+    }
 
     [HttpDelete("projects/{id:int}/images/{imageId:int}")]
     public async Task<IActionResult> DeleteProjectImage([FromRoute] int id, [FromRoute] int imageId, CancellationToken cancellationToken = default)

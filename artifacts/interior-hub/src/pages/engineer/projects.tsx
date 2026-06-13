@@ -21,20 +21,47 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PaginationBar } from "@/components/pagination-bar";
 import { EmptyState } from "@/components/empty-state";
 import { useToast } from "@/hooks/use-toast";
-import { mockMyProjects, mockCategories } from "@/data/mock";
-import type { EngineerProject } from "@/types";
+import { apiClient } from "@/lib/apiClient";
+import type { EngineerProject, Category } from "@/types";
 
 const PAGE_SIZE = 6;
 
-// ─── Data source (replace with real API calls) ───────────────────────────────
+// ─── Data source — wired to /api/me/projects ─────────────────────────────────
 function useMyProjects() {
   const [data, setData] = useState<EngineerProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   useEffect(() => {
-    const t = setTimeout(() => { setData(mockMyProjects); setIsLoading(false); }, 500);
-    return () => clearTimeout(t);
+    apiClient
+      .get("/api/me/projects")
+      .then((res) => {
+        // Backend returns PagedResult<T> with Items array
+        const items = res.data.items ?? res.data;
+        setData(Array.isArray(items) ? items.map(mapProject) : []);
+      })
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
   }, []);
   return { data, setData, isLoading };
+}
+
+function useCategories() {
+  const [categories, setCategories] = useState<Category[]>([]);
+  useEffect(() => {
+    apiClient.get("/api/categories").then((res) => setCategories(res.data)).catch(() => {});
+  }, []);
+  return categories;
+}
+
+function mapProject(dto: any): EngineerProject {
+  return {
+    id: dto.id,
+    title: dto.title,
+    description: dto.description ?? null,
+    coverImageUrl: dto.imageUrl ?? dto.coverImageUrl ?? null,
+    categoryId: dto.categoryId,
+    categoryName: dto.categoryName ?? "",
+    createdAt: dto.createdAt,
+  };
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -49,6 +76,7 @@ const EMPTY_FORM: ProjectFormValues = { title: "", description: "", categoryId: 
 
 export default function EngineerProjects() {
   const { data: projects, setData: setProjects, isLoading } = useMyProjects();
+  const categories = useCategories();
   const { toast } = useToast();
 
   const [page, setPage] = useState(1);
@@ -101,60 +129,54 @@ export default function EngineerProjects() {
     setModalOpen(true);
   };
 
-  // Add / Edit submit — wire to POST or PATCH /api/engineer/projects/:id
+  // Add / Edit submit — wired to POST or PUT /api/me/projects/:id
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title.trim() || !form.categoryId) return;
     setFormLoading(true);
-    await new Promise((r) => setTimeout(r, 600)); // TODO: replace with API call
 
-    // Prefer the local file preview URL; fallback to the typed URL
     const resolvedCoverUrl = (coverPreview ?? form.coverImageUrl.trim()) || null;
+    const dto = {
+      title: form.title.trim(),
+      description: form.description.trim() || "",
+      categoryId: parseInt(form.categoryId),
+      imageUrl: resolvedCoverUrl,
+    };
 
-    const category = mockCategories.find((c) => c.id === parseInt(form.categoryId));
-    if (editTarget) {
-      setProjects((prev) =>
-        prev.map((p) =>
-          p.id === editTarget.id
-            ? {
-                ...p,
-                title: form.title.trim(),
-                description: form.description.trim() || null,
-                categoryId: parseInt(form.categoryId),
-                categoryName: category?.name ?? p.categoryName,
-                coverImageUrl: resolvedCoverUrl,
-              }
-            : p,
-        ),
-      );
-      toast({ title: "Project updated" });
-    } else {
-      const newProject: EngineerProject = {
-        id: Date.now(),
-        title: form.title.trim(),
-        description: form.description.trim() || null,
-        categoryId: parseInt(form.categoryId),
-        categoryName: category?.name ?? "",
-        coverImageUrl: resolvedCoverUrl,
-        createdAt: new Date().toISOString(),
-      };
-      setProjects((prev) => [newProject, ...prev]);
-      toast({ title: "Project added" });
+    try {
+      if (editTarget) {
+        const res = await apiClient.put(`/api/me/projects/${editTarget.id}`, dto);
+        setProjects((prev) =>
+          prev.map((p) => (p.id === editTarget.id ? mapProject(res.data) : p)),
+        );
+        toast({ title: "Project updated" });
+      } else {
+        const res = await apiClient.post("/api/me/projects", dto);
+        setProjects((prev) => [mapProject(res.data), ...prev]);
+        toast({ title: "Project added" });
+      }
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Error", description: err.response?.data?.message || "Failed to save project." });
+    } finally {
+      setFormLoading(false);
+      setModalOpen(false);
     }
-
-    setFormLoading(false);
-    setModalOpen(false);
   };
 
-  // Delete — wire to DELETE /api/engineer/projects/:id
+  // Delete — wired to DELETE /api/me/projects/:id
   const handleDelete = async () => {
     if (!deleteTarget) return;
     setDeleteLoading(true);
-    await new Promise((r) => setTimeout(r, 500)); // TODO: replace with API call
-    setProjects((prev) => prev.filter((p) => p.id !== deleteTarget.id));
-    toast({ title: "Project deleted", variant: "destructive" });
-    setDeleteTarget(null);
-    setDeleteLoading(false);
+    try {
+      await apiClient.delete(`/api/me/projects/${deleteTarget.id}`);
+      setProjects((prev) => prev.filter((p) => p.id !== deleteTarget.id));
+      toast({ title: "Project deleted", variant: "destructive" });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Error", description: "Failed to delete project." });
+    } finally {
+      setDeleteTarget(null);
+      setDeleteLoading(false);
+    }
   };
 
   const setField = (field: keyof ProjectFormValues) => (
@@ -255,7 +277,7 @@ export default function EngineerProjects() {
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockCategories.map((c) => (
+                  {categories.map((c) => (
                     <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
                   ))}
                 </SelectContent>
