@@ -1,0 +1,54 @@
+Design a modern admin dashboard for "InteriorHub" — a platform connecting 
+interior design engineers with clients in Yemen. The admin manages the 
+entire platform's content and engineer approvals.
+
+STYLE: Clean, professional, minimal SaaS dashboard aesthetic. Use a 
+sidebar layout with main content area. Color palette: neutral grays/whites 
+as base with a warm accent color (terracotta or deep teal) reflecting an 
+interior design brand. Modern sans-serif typography. Generous whitespace, 
+card-based components, subtle shadows.
+
+PAGES NEEDED:
+
+1. DASHBOARD HOME
+   - Top stats cards: Total Engineers, Pending Approvals, Total Projects, 
+     Total Categories
+   - Recent activity feed (new engineer signups, new projects added)
+
+2. ENGINEERS MANAGEMENT
+   - Data table with columns: Profile photo, Full Name, City, Email, 
+     Status (Pending/Approved/Disabled), Trial End Date, Projects Count, 
+     Actions
+   - Filter/search bar (by name, city, status)
+   - Status badges with distinct colors (Pending = yellow, Approved = green, 
+     Disabled = red)
+   - Action buttons per row: "Approve", "Disable/Enable", "View Profile"
+   - Pagination controls at bottom
+   - A detail/side-panel view showing full engineer profile when clicked
+
+3. CATEGORIES MANAGEMENT
+   - Simple table/grid: Category Name, Slug, Number of Linked Projects, 
+     Actions (Edit, Delete)
+   - "Add New Category" button opening a modal with Name + auto-generated 
+     Slug field
+   - Delete button should show a disabled/grayed state OR warning tooltip 
+     when category has linked projects (cannot delete if in use)
+   - Confirmation modal for delete action
+
+4. PROJECTS OVERVIEW (read-only for admin)
+   - Grid/gallery view of all projects across all engineers
+   - Each card shows: cover image, title, category tag, engineer name, 
+     date created
+   - Filter by category and by engineer
+   - Click to open project detail view (images carousel, description, 
+     linked engineer)
+
+5. CONTACT REQUESTS LOG (optional overview)
+   - Table showing which engineers received contact requests and how many, 
+     for admin oversight
+
+NAVIGATION: Persistent left sidebar with icons for: Dashboard, Engineers, 
+Categories, Projects, Contact Requests Log, Settings/Logout.
+
+Make all tables responsive, with empty states designed (e.g., "No 
+categories yet — add your first one").

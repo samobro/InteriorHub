@@ -1,15 +1,25 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: InteriorHub Admin Dashboard API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: dashboard
+    description: Dashboard summary and activity
+  - name: engineers
+    description: Engineer management
+  - name: categories
+    description: Category management
+  - name: projects
+    description: Projects overview
+  - name: contact-requests
+    description: Contact requests log
+
 paths:
   /healthz:
     get:
@@ -24,6 +34,269 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      summary: Get dashboard stats
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /dashboard/activity:
+    get:
+      operationId: getDashboardActivity
+      tags: [dashboard]
+      summary: Get recent activity feed
+      responses:
+        "200":
+          description: Activity list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  /engineers:
+    get:
+      operationId: listEngineers
+      tags: [engineers]
+      summary: List all engineers
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: city
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, disabled]
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Engineer list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EngineerListResponse"
+
+  /engineers/{id}:
+    get:
+      operationId: getEngineer
+      tags: [engineers]
+      summary: Get engineer by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Engineer detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Engineer"
+        "404":
+          description: Not found
+
+  /engineers/{id}/status:
+    patch:
+      operationId: updateEngineerStatus
+      tags: [engineers]
+      summary: Update engineer status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EngineerStatusUpdate"
+      responses:
+        "200":
+          description: Updated engineer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Engineer"
+        "404":
+          description: Not found
+
+  /categories:
+    get:
+      operationId: listCategories
+      tags: [categories]
+      summary: List all categories
+      responses:
+        "200":
+          description: Category list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+    post:
+      operationId: createCategory
+      tags: [categories]
+      summary: Create a new category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryInput"
+      responses:
+        "201":
+          description: Created category
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+
+  /categories/{id}:
+    patch:
+      operationId: updateCategory
+      tags: [categories]
+      summary: Update a category
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryUpdate"
+      responses:
+        "200":
+          description: Updated category
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteCategory
+      tags: [categories]
+      summary: Delete a category
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+        "400":
+          description: Cannot delete category with linked projects
+        "404":
+          description: Not found
+
+  /projects:
+    get:
+      operationId: listProjects
+      tags: [projects]
+      summary: List all projects
+      parameters:
+        - name: categoryId
+          in: query
+          schema:
+            type: integer
+        - name: engineerId
+          in: query
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Project list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectListResponse"
+
+  /projects/{id}:
+    get:
+      operationId: getProject
+      tags: [projects]
+      summary: Get project by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Project detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectDetail"
+        "404":
+          description: Not found
+
+  /contact-requests:
+    get:
+      operationId: listContactRequests
+      tags: [contact-requests]
+      summary: List contact requests
+      parameters:
+        - name: engineerId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Contact request list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ContactRequest"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +307,274 @@ components:
       required:
         - status
 
+    DashboardStats:
+      type: object
+      properties:
+        totalEngineers:
+          type: integer
+        pendingApprovals:
+          type: integer
+        totalProjects:
+          type: integer
+        totalCategories:
+          type: integer
+        approvedEngineers:
+          type: integer
+        disabledEngineers:
+          type: integer
+      required:
+        - totalEngineers
+        - pendingApprovals
+        - totalProjects
+        - totalCategories
+        - approvedEngineers
+        - disabledEngineers
+
+    ActivityItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [engineer_signup, project_added, engineer_approved, engineer_disabled, contact_request]
+        message:
+          type: string
+        timestamp:
+          type: string
+        relatedId:
+          type: ["integer", "null"]
+        relatedName:
+          type: ["string", "null"]
+      required:
+        - id
+        - type
+        - message
+        - timestamp
+
+    Engineer:
+      type: object
+      properties:
+        id:
+          type: integer
+        fullName:
+          type: string
+        city:
+          type: string
+        email:
+          type: string
+        phone:
+          type: ["string", "null"]
+        bio:
+          type: ["string", "null"]
+        profilePhoto:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [pending, approved, disabled]
+        trialEndDate:
+          type: ["string", "null"]
+        projectsCount:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - fullName
+        - city
+        - email
+        - status
+        - projectsCount
+        - createdAt
+
+    EngineerListResponse:
+      type: object
+      properties:
+        engineers:
+          type: array
+          items:
+            $ref: "#/components/schemas/Engineer"
+        total:
+          type: integer
+        page:
+          type: integer
+        totalPages:
+          type: integer
+      required:
+        - engineers
+        - total
+        - page
+        - totalPages
+
+    EngineerStatusUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, approved, disabled]
+      required:
+        - status
+
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        projectsCount:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - slug
+        - projectsCount
+        - createdAt
+
+    CategoryInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        slug:
+          type: string
+          minLength: 1
+      required:
+        - name
+        - slug
+
+    CategoryUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        slug:
+          type: string
+          minLength: 1
+
+    DeleteResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+      required:
+        - success
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        coverImage:
+          type: ["string", "null"]
+        categoryId:
+          type: integer
+        categoryName:
+          type: string
+        engineerId:
+          type: integer
+        engineerName:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - title
+        - categoryId
+        - categoryName
+        - engineerId
+        - engineerName
+        - createdAt
+
+    ProjectDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        coverImage:
+          type: ["string", "null"]
+        images:
+          type: array
+          items:
+            type: string
+        categoryId:
+          type: integer
+        categoryName:
+          type: string
+        engineerId:
+          type: integer
+        engineerName:
+          type: string
+        engineerEmail:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - title
+        - categoryId
+        - categoryName
+        - engineerId
+        - engineerName
+        - engineerEmail
+        - createdAt
+        - images
+
+    ProjectListResponse:
+      type: object
+      properties:
+        projects:
+          type: array
+          items:
+            $ref: "#/components/schemas/Project"
+        total:
+          type: integer
+        page:
+          type: integer
+        totalPages:
+          type: integer
+      required:
+        - projects
+        - total
+        - page
+        - totalPages
+
+    ContactRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+        engineerId:
+          type: integer
+        engineerName:
+          type: string
+        engineerEmail:
+          type: string
+        clientName:
+          type: string
+        clientEmail:
+          type: string
+        message:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - engineerId
+        - engineerName
+        - engineerEmail
+        - clientName
+        - clientEmail
+        - createdAt
