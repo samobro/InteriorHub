@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 
 import { AppLayout } from "@/components/layout";
 import { EngineerLayout } from "@/components/engineer-layout";
+import Home from "@/pages/public/Home";
 
 // Admin pages
 import Dashboard from "@/pages/dashboard";
@@ -62,7 +63,8 @@ function Router() {
   return (
     <AppLayout>
       <Switch>
-        <Route path="/" component={Dashboard} />
+        <Route path="/home" component={Home} />
+        <Route path="/" component={Home} />
         <Route path="/engineers" component={Engineers} />
         <Route path="/categories" component={Categories} />
         <Route path="/projects" component={Projects} />
