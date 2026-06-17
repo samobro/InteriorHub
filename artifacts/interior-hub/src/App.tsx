@@ -8,7 +8,6 @@ import { EngineerLayout } from "@/components/engineer-layout";
 import Home from "@/pages/public/Home";
 
 // Admin pages
-import Dashboard from "@/pages/dashboard";
 import Engineers from "@/pages/engineers";
 import Categories from "@/pages/categories";
 import Projects from "@/pages/projects";
@@ -63,8 +62,6 @@ function Router() {
   return (
     <AppLayout>
       <Switch>
-        <Route path="/home" component={Home} />
-        <Route path="/" component={Home} />
         <Route path="/engineers" component={Engineers} />
         <Route path="/categories" component={Categories} />
         <Route path="/projects" component={Projects} />
@@ -76,14 +73,32 @@ function Router() {
   );
 }
 
+function AppRoutes() {
+  const [location] = useLocation();
+  const isPublicHomeRoute = location === "/" || location === "/home";
+
+  if (isPublicHomeRoute) {
+    return (
+      <Switch>
+        <Route path="/home" component={Home} />
+        <Route path="/" component={Home} />
+      </Switch>
+    );
+  }
+
+  return (
+    <AuthProvider>
+      <Router />
+    </AuthProvider>
+  );
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <AuthProvider>
-            <Router />
-          </AuthProvider>
+          <AppRoutes />
         </WouterRouter>
         <Toaster />
       </TooltipProvider>
