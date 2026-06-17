@@ -103,9 +103,11 @@ function CountUpStat({ value, suffix, label }: StatItem) {
   return (
     <motion.div
       ref={ref}
-      className="rounded-2xl border border-border bg-card/80 p-6 text-center shadow-sm backdrop-blur"
+      className="rounded-2xl border border-border bg-card/80 p-6 text-center shadow-sm backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
     >
@@ -121,10 +123,18 @@ function CountUpStat({ value, suffix, label }: StatItem) {
 export default function Home() {
   return (
     <main dir="rtl" className="min-h-screen overflow-hidden bg-background text-foreground">
-      <section className="relative px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.16),transparent_32rem)]" />
+      <section className="relative overflow-hidden px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-10"
+          style={{
+            backgroundImage:
+              "url('https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=2000&q=80')",
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.16),transparent_32rem)]" />
         <motion.div
-          className="mx-auto flex max-w-5xl flex-col items-center text-center"
+          className="relative z-10 mx-auto flex max-w-5xl flex-col items-center text-center"
           initial="hidden"
           animate="visible"
           variants={{ visible: { transition: { staggerChildren: 0.16 } }, hidden: {} }}
@@ -140,10 +150,10 @@ export default function Home() {
               منصة InteriorHub تربطك بأفضل المهندسين المعتمدين لتحويل مساحتك
             </p>,
             <div key="actions" className="mt-10 flex flex-col gap-3 sm:flex-row sm:justify-center">
-              <Button asChild size="lg" className="min-w-40 text-base">
+              <Button asChild size="lg" className="min-w-40 text-base transition-all duration-200 hover:scale-[1.02] hover:shadow-md active:scale-[0.98] active:duration-150">
                 <Link href="/engineers">تصفح المهندسين</Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="min-w-40 text-base">
+              <Button asChild size="lg" variant="outline" className="min-w-40 text-base transition-colors duration-200 hover:bg-primary/5">
                 <Link href="/register">سجّل كمهندس</Link>
               </Button>
             </div>,
@@ -183,12 +193,18 @@ export default function Home() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.55, delay: index * 0.12, ease: "easeOut" }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  <Card className="h-full border-card-border bg-card/95">
+                  <Card className="h-full border-card-border bg-card/95 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
                     <CardContent className="p-6 text-center">
-                      <div className="mx-auto mb-5 flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                      <motion.div
+                        className="mx-auto mb-5 flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary"
+                        whileHover={{ rotate: 5, scale: 1.1 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                      >
                         <Icon className="size-7" aria-hidden="true" />
-                      </div>
+                      </motion.div>
                       <h3 className="text-xl font-bold">{step.title}</h3>
                       <p className="mt-3 leading-7 text-muted-foreground">{step.description}</p>
                     </CardContent>
@@ -214,10 +230,13 @@ export default function Home() {
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.12, ease: "easeOut" }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="group"
               >
-                <Card className="h-full overflow-hidden border-card-border bg-card">
+                <Card className="h-full overflow-hidden border-card-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
                   <CardContent className="p-6 text-center">
-                    <div className="mx-auto flex size-20 items-center justify-center rounded-full bg-gradient-to-br from-primary to-chart-4 text-xl font-bold text-primary-foreground shadow-md">
+                    <div className="mx-auto flex size-20 items-center justify-center rounded-full bg-gradient-to-br from-primary to-chart-4 text-xl font-bold text-primary-foreground shadow-md transition-transform duration-300 group-hover:scale-105">
                       {engineer.initials}
                     </div>
                     <h3 className="mt-5 text-xl font-bold">{engineer.name}</h3>
@@ -235,7 +254,7 @@ export default function Home() {
 
       <section className="px-4 py-20 sm:px-6 lg:px-8">
         <motion.div
-          className="mx-auto max-w-4xl rounded-3xl border border-primary/20 bg-primary px-6 py-12 text-center text-primary-foreground shadow-xl md:px-12"
+          className="mx-auto max-w-4xl rounded-3xl border border-primary/20 bg-primary px-6 py-12 text-center text-primary-foreground shadow-lg md:px-12"
           initial={{ opacity: 0, y: 56 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -245,7 +264,7 @@ export default function Home() {
           <p className="mx-auto mt-4 max-w-2xl text-lg leading-8 text-primary-foreground/85">
             انضم إلى المنصة وابدأ تجربتك المجانية اليوم
           </p>
-          <Button asChild size="lg" variant="secondary" className="mt-8 text-base">
+          <Button asChild size="lg" variant="secondary" className="mt-8 text-base transition-all duration-200 hover:scale-[1.02] hover:shadow-md active:scale-[0.98] active:duration-150">
             <Link href="/register">سجّل الآن مجاناً</Link>
           </Button>
         </motion.div>
