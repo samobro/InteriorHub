@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AuthModule.Application\AuthModule.Application.csproj" />
+    <ProjectReference Include="..\AuthModule.Domain\AuthModule.Domain.csproj" />
+    <ProjectReference Include="..\..\..\src\InteriorHub.Application\InteriorHub.Application.csproj" />
+    <ProjectReference Include="..\..\..\src\InteriorHub.Infrastructure\InteriorHub.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\src\InteriorHub.Domain\InteriorHub.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.18" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.18">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.18" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.18" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="9.0.18" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.18" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="OpenIddict.AspNetCore" Version="7.6.0" />
+    <PackageReference Include="OpenIddict.EntityFrameworkCore" Version="7.6.0" />
+  </ItemGroup>
+
+</Project>

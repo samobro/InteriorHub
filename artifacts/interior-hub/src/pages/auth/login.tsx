@@ -8,6 +8,20 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 
+function parseJwt(token: string): any {
+  const base64Url = token.split(".")[1];
+  const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+  const jsonPayload = decodeURIComponent(
+    window
+      .atob(base64)
+      .split("")
+      .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+      .join("")
+  );
+
+  return JSON.parse(jsonPayload);
+}
+
 export default function Login() {
   const [, setLocation] = useLocation();
   const { login } = useAuth();
@@ -22,17 +36,41 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const response = await apiClient.post("/api/auth/login", { email, password });
-      
-      const { token, user } = response.data;
-      login(token);
+      const payload = new URLSearchParams();
+      payload.set("grant_type", "password");
+      payload.set("username", email);
+      payload.set("password", password);
+      payload.set("scope", "offline_access");
+
+      const clientId = import.meta.env.VITE_OIDC_CLIENT_ID?.trim();
+      if (clientId) {
+        payload.set("client_id", clientId);
+      }
+
+      const response = await apiClient.post("/connect/token", payload.toString(), {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        }
+      });
+
+      const accessToken = response.data?.access_token;
+      const refreshToken = response.data?.refresh_token ?? null;
+      if (!accessToken) {
+        throw new Error("The token response did not include an access token.");
+      }
+
+      login(accessToken, refreshToken);
+
+      const tokenPayload = parseJwt(accessToken);
+      const userName = tokenPayload.unique_name || tokenPayload.name || "there";
+      const role = tokenPayload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] || tokenPayload.role || "Engineer";
 
       toast({
         title: "Login successful",
-        description: `Welcome back, ${user.name}!`,
+        description: `Welcome back, ${userName}!`,
       });
 
-      if (user.role === "Admin") {
+      if (role === "Admin") {
         setLocation("/"); // Dashboard for admin
       } else {
         setLocation("/engineer/profile"); // Engineer portal

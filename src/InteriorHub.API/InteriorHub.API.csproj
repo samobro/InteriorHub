@@ -18,8 +18,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\ISD.Audit.Infrastructure\ISD.Audit.Infrastructure.csproj" />
     <ProjectReference Include="..\InteriorHub.Application\InteriorHub.Application.csproj" />
     <ProjectReference Include="..\InteriorHub.Infrastructure\InteriorHub.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modular\Auth\AuthModule.Infrastructure\AuthModule.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

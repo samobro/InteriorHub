@@ -31,11 +31,12 @@ export default function Register() {
     setLoading(true);
 
     try {
-      await apiClient.post("/api/auth/register", formData);
+      const response = await apiClient.post("/api/auth/register", formData);
+      const message = response.data?.message || "Your account is pending approval by an administrator.";
       
       toast({
         title: "Registration successful",
-        description: "Your account is pending approval by an administrator.",
+        description: message,
       });
 
       setLocation("/login");

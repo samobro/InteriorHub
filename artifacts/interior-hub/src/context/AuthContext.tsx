@@ -11,7 +11,7 @@ interface AuthUser {
 interface AuthContextType {
   currentUser: AuthUser | null;
   isAuthenticated: boolean;
-  login: (token: string) => void;
+  login: (token: string, refreshToken?: string | null) => void;
   logout: () => void;
 }
 
@@ -54,13 +54,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const currentUser = getUserFromToken(token);
   const isAuthenticated = !!currentUser;
 
-  const login = (newToken: string) => {
+  const login = (newToken: string, refreshToken?: string | null) => {
     localStorage.setItem("interiorrhub_token", newToken);
+    if (refreshToken) {
+      localStorage.setItem("interiorrhub_refresh_token", refreshToken);
+    } else {
+      localStorage.removeItem("interiorrhub_refresh_token");
+    }
     setToken(newToken);
   };
 
   const logout = () => {
     localStorage.removeItem("interiorrhub_token");
+    localStorage.removeItem("interiorrhub_refresh_token");
     setToken(null);
     setLocation("/login");
   };

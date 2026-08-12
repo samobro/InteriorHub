@@ -20,6 +20,7 @@ apiClient.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem("interiorrhub_token");
+      localStorage.removeItem("interiorrhub_refresh_token");
       // Redirect to login using window.location so it works outside React context if needed
       window.location.href = "/login";
     }

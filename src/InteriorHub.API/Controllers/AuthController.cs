@@ -9,7 +9,6 @@ using System.Text;
 
 namespace InteriorHub.API.Controllers;
 
-public sealed record RegisterRequest(string Name, string Email, string Password, string City, string Bio, string Specialization);
 public sealed record LoginRequest(string Email, string Password);
 public sealed record AuthResponse(string Token, AuthUser User);
 public sealed record AuthUser(int Id, string Name, string Email, string Role);
@@ -19,38 +18,6 @@ public sealed record AuthUser(int Id, string Name, string Email, string Role);
 public sealed class AuthController(IUnitOfWork unitOfWork) : ControllerBase
 {
     private const string JwtSecret = "InteriorHub_dev_jwt_secret_key_please_replace_in_production_12345";
-
-    [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
-    {
-        var exists = await unitOfWork.Engineers.Query()
-            .AnyAsync(x => x.Email == request.Email, cancellationToken);
-
-        if (exists)
-        {
-            return Conflict(new { error = "An account with this email already exists." });
-        }
-
-        var engineer = new Engineer
-        {
-            FullName = request.Name,
-            Email = request.Email,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-            City = request.City,
-            Bio = request.Bio,
-            Specialization = request.Specialization,
-            Role = "Engineer",
-            Status = EngineerStatus.Pending,
-            IsApproved = false,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        await unitOfWork.Engineers.AddAsync(engineer);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-
-        var user = new AuthUser(engineer.Id, engineer.FullName, engineer.Email, engineer.Role);
-        return Ok(new AuthResponse(CreateJwtToken(user.Id, user.Email, user.Name, user.Role), user));
-    }
 
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
