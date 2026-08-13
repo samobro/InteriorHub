@@ -9,6 +9,7 @@ using AuthModule.Infrastructure.Security;
 using AuthModule.Infrastructure.Services;
 using OpenIddict.Server;
 using FluentValidation;
+using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace AuthModule.Infrastructure;
 
@@ -37,8 +38,10 @@ public static class DependencyInjection
             .AddServer(options =>
             {
                 options.SetTokenEndpointUris("/connect/token");
+                options.SetRevocationEndpointUris("/connect/revoke");
                 options.AllowPasswordFlow();
                 options.AllowRefreshTokenFlow();
+                options.RegisterScopes(Scopes.OfflineAccess);
                 options.AcceptAnonymousClients();
                 options.SetAccessTokenLifetime(TimeSpan.FromMinutes(15));
                 options.SetRefreshTokenLifetime(TimeSpan.FromDays(14));

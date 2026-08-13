@@ -4,11 +4,12 @@ using InteriorHub.Infrastructure.Persistence;
 using InteriorHub.Domain.Entities;
 using InteriorHub.API.Middleware;
 using ISD.Audit.Infrastructure;
-using AuthModule.Infrastructure;
-using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using System.Text.Json.Serialization;
-using System.Threading.RateLimiting;
+using System.Data.Common;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,29 +26,25 @@ builder.Services.AddControllers()
     });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddRateLimiter(options =>
-{
-    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+
+var jwtSecret = "InteriorHub_dev_jwt_secret_key_please_replace_in_production_12345";
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
     {
-        if (httpContext.Request.Path.StartsWithSegments("/connect/token", StringComparison.OrdinalIgnoreCase))
+        options.TokenValidationParameters = new TokenValidationParameters
         {
-            var partitionKey = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-
-            return RateLimitPartition.GetFixedWindowLimiter(
-                partitionKey,
-                _ => new FixedWindowRateLimiterOptions
-                {
-                    PermitLimit = 10,
-                    Window = TimeSpan.FromMinutes(1),
-                    QueueLimit = 0,
-                    AutoReplenishment = true
-                });
-        }
-
-        return RateLimitPartition.GetNoLimiter("default");
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = "InteriorHub",
+            ValidAudience = "InteriorHub",
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
+            ClockSkew = TimeSpan.FromMinutes(1),
+            RoleClaimType = System.Security.Claims.ClaimTypes.Role
+        };
     });
-});
+builder.Services.AddAuthorization();
 
 builder.Services.AddCors(options =>
 {
@@ -62,9 +59,7 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddAuthModule(builder.Configuration);
-builder.Services.AddAuthorization();
-builder.Services.AddAuditModule(DbConnection.GetConnectionString);
+//builder.Services.AddAuditModule(DbConnection.GetConnectionString);
 
 var app = builder.Build();
 
@@ -104,7 +99,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowAll");
-app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
