@@ -2,7 +2,7 @@ using AuthModule.Application.Commands;
 using AuthModule.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
-namespace AuthModule.Infrastructure.Controllers;
+namespace InteriorHub.API.Controllers;
 
 [ApiController]
 [Route("api/auth")]

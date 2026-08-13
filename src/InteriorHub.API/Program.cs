@@ -5,11 +5,8 @@ using InteriorHub.Domain.Entities;
 using InteriorHub.API.Middleware;
 using ISD.Audit.Infrastructure;
 using AuthModule.Infrastructure;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 
@@ -25,8 +22,7 @@ builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-    })
-    .AddApplicationPart(typeof(global::AuthModule.Infrastructure.DependencyInjection).Assembly);
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddRateLimiter(options =>
@@ -53,25 +49,6 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
-var jwtSecret = "InteriorHub_dev_jwt_secret_key_please_replace_in_production_12345";
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = "InteriorHub",
-            ValidAudience = "InteriorHub",
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
-            ClockSkew = TimeSpan.FromMinutes(1),
-            RoleClaimType = System.Security.Claims.ClaimTypes.Role
-        };
-    });
-builder.Services.AddAuthorization();
-
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -86,6 +63,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddAuthModule(builder.Configuration);
+builder.Services.AddAuthorization();
 builder.Services.AddAuditModule(DbConnection.GetConnectionString);
 
 var app = builder.Build();
