@@ -12,13 +12,13 @@ public static class AuthPrincipalFactory
         var identity = new ClaimsIdentity(
             authenticationType: TokenValidationParameters.DefaultAuthenticationType,
             nameType: ClaimTypes.Name,
-            roleType: ClaimTypes.Role);
+            roleType: OpenIddictConstants.Claims.Role);
 
         identity.AddClaim(new Claim("EngineerId", engineerId.ToString()));
         identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, engineerId.ToString()));
         identity.AddClaim(new Claim(ClaimTypes.Name, name));
         identity.AddClaim(new Claim(ClaimTypes.Email, email));
-        identity.AddClaim(new Claim(ClaimTypes.Role, role));
+        identity.AddClaim(new Claim(OpenIddictConstants.Claims.Role, role));
         identity.AddClaim(new Claim(OpenIddictConstants.Claims.Subject, engineerId.ToString()));
 
         identity.SetDestinations(static claim => claim.Type switch
@@ -27,7 +27,7 @@ public static class AuthPrincipalFactory
             ClaimTypes.NameIdentifier => [OpenIddictConstants.Destinations.AccessToken],
             ClaimTypes.Name => [OpenIddictConstants.Destinations.AccessToken],
             ClaimTypes.Email => [OpenIddictConstants.Destinations.AccessToken],
-            ClaimTypes.Role => [OpenIddictConstants.Destinations.AccessToken],
+            OpenIddictConstants.Claims.Role => [OpenIddictConstants.Destinations.AccessToken],
             OpenIddictConstants.Claims.Subject => [OpenIddictConstants.Destinations.AccessToken],
             _ => []
         });

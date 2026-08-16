@@ -9,5 +9,6 @@ public sealed class CategoryCreateDtoValidator : AbstractValidator<CategoryCreat
     {
         RuleFor(x => x.Name).NotEmpty().MaximumLength(150);
         RuleFor(x => x.Slug).NotEmpty().MaximumLength(150);
+        RuleFor(x => x.ImageUrl).MaximumLength(1000).When(x => !string.IsNullOrWhiteSpace(x.ImageUrl));
     }
 }

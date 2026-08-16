@@ -1,4 +1,5 @@
 using InteriorHub.Application.Interfaces;
+using InteriorHub.Infrastructure.Persistence;
 using InteriorHub.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -8,7 +9,10 @@ namespace InteriorHub.API.Controllers;
 [ApiController]
 [Authorize(Roles = "Admin")]
 [Route("api/admin/engineers")]
-public sealed class AdminEngineersController(IEngineerService engineerService) : BaseApiController
+public sealed class AdminEngineersController(
+    IEngineerService engineerService,
+    ICloudinaryService cloudinaryService,
+    IUnitOfWork unitOfWork) : BaseApiController
 {
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] EngineerStatus? status = null, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, CancellationToken cancellationToken = default)
@@ -47,5 +51,18 @@ public sealed class AdminEngineersController(IEngineerService engineerService) :
         // TODO: Add real admin authentication/authorization wiring.
         await engineerService.EnableAsync(id, cancellationToken);
         return NoContent();
+    }
+
+    [HttpPost("{id:int}/profile-image")]
+    public async Task<IActionResult> UploadProfileImage([FromRoute] int id, IFormFile file, CancellationToken cancellationToken = default)
+    {
+        var engineer = await unitOfWork.Engineers.GetByIdAsync(id)
+            ?? throw new InteriorHub.Application.Common.Exceptions.NotFoundException($"Engineer {id} was not found.");
+
+        engineer.ProfileImageUrl = await cloudinaryService.UploadImageAsync(file, "engineers", cancellationToken);
+        unitOfWork.Engineers.Update(engineer);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return Ok(new { profileImageUrl = engineer.ProfileImageUrl });
     }
 }

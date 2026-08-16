@@ -4,10 +4,10 @@ using InteriorHub.Infrastructure.Persistence;
 using InteriorHub.Domain.Entities;
 using InteriorHub.API.Middleware;
 using ISD.Audit.Infrastructure;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using AuthModule.Infrastructure;
+using AuthModule.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
+using OpenIddict.Validation.AspNetCore;
 using System.Text.Json.Serialization;
 using System.Data.Common;
 
@@ -27,23 +27,7 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-var jwtSecret = "InteriorHub_dev_jwt_secret_key_please_replace_in_production_12345";
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = "InteriorHub",
-            ValidAudience = "InteriorHub",
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
-            ClockSkew = TimeSpan.FromMinutes(1),
-            RoleClaimType = System.Security.Claims.ClaimTypes.Role
-        };
-    });
+builder.Services.AddAuthentication(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
 builder.Services.AddAuthorization();
 
 builder.Services.AddCors(options =>
@@ -59,34 +43,61 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddAuthModule(builder.Configuration);
 //builder.Services.AddAuditModule(DbConnection.GetConnectionString);
 
 var app = builder.Build();
+
+var adminEmail = builder.Configuration["AdminSeed:Email"];
+var adminPassword = builder.Configuration["AdminSeed:Password"];
 
 // ── Admin seed on startup ──────────────────────────────────────────────
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<InteriorHubDbContext>();
+    var authDb = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
     await db.Database.MigrateAsync();
 
-    var hasAdmin = await db.Engineers.AnyAsync(e => e.Role == "Admin");
-    if (!hasAdmin)
+    if (string.IsNullOrWhiteSpace(adminEmail) || string.IsNullOrWhiteSpace(adminPassword))
     {
-        db.Engineers.Add(new Engineer
+        app.Logger.LogWarning("Admin seed skipped: AdminSeed:Email and AdminSeed:Password must be set in configuration/user-secrets.");
+    }
+    else
+    {
+        var hasAdmin = await db.Engineers.AnyAsync(e => e.Role == "Admin");
+        if (!hasAdmin)
         {
-            FullName = "Admin",
-            Email = "admin@interiorhub.com",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin@123"),
-            City = "System",
-            Bio = "Platform administrator",
-            Specialization = "Administration",
-            Role = "Admin",
-            Status = EngineerStatus.Active,
-            IsApproved = true,
-            CreatedAt = DateTime.UtcNow
-        });
-        await db.SaveChangesAsync();
-        app.Logger.LogInformation("Default admin account seeded: admin@interiorhub.com");
+            var passwordHash = BCrypt.Net.BCrypt.HashPassword(adminPassword);
+            var engineer = new Engineer
+            {
+                FullName = "Admin",
+                Email = adminEmail,
+                PasswordHash = passwordHash,
+                City = "System",
+                Bio = "Platform administrator",
+                Specialization = "Administration",
+                Role = "Admin",
+                Status = EngineerStatus.Active,
+                IsApproved = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            try
+            {
+                db.Engineers.Add(engineer);
+                await db.SaveChangesAsync();
+
+                authDb.AuthUsers.Add(AuthUser.Create(engineer.Id, passwordHash));
+                await authDb.SaveChangesAsync();
+
+                app.Logger.LogInformation("Default admin account seeded: {AdminEmail}", adminEmail);
+            }
+            catch (Exception exception)
+            {
+                app.Logger.LogError(exception, "Admin seed failed after creating the Engineer/AuthUser records.");
+                throw;
+            }
+        }
     }
 }
 

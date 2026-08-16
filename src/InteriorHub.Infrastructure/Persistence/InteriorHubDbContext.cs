@@ -43,6 +43,7 @@ public sealed class InteriorHubDbContext(DbContextOptions<InteriorHubDbContext> 
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Name).HasMaxLength(150).IsRequired();
             entity.Property(x => x.Slug).HasMaxLength(150).IsRequired();
+            entity.Property(x => x.ImageUrl).HasMaxLength(1000);
             entity.HasIndex(x => x.Name).IsUnique();
             entity.HasIndex(x => x.Slug).IsUnique();
         });

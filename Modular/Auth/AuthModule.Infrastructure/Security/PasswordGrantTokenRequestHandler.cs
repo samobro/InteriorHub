@@ -87,7 +87,6 @@ public sealed class PasswordGrantTokenRequestHandler(
         var principal = AuthPrincipalFactory.CreatePrincipal(engineer.Id, engineer.FullName, engineer.Email, engineer.Role);
         principal.SetScopes(Scopes.OfflineAccess);
         context.SignIn(principal);
-        context.HandleRequest();
     }
 
     private static void RejectInvalidCredentials(OpenIddictServerEvents.HandleTokenRequestContext context)
