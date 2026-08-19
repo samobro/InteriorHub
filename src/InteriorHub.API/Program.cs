@@ -44,7 +44,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddAuthModule(builder.Configuration);
-//builder.Services.AddAuditModule(DbConnection.GetConnectionString);
+builder.Services.AddAuditModule(builder.Configuration);
 
 var app = builder.Build();
 
