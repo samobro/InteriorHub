@@ -15,7 +15,7 @@ public enum AuditStatus
 public class UserJourneyLog
 {
     public int LogId { get; private set; }
-    public Guid SessionId { get; private set; }
+    public Guid? SessionId { get; private set; }
     public string? UserId { get; private set; }
     public string ProcessName { get; private set; } = default!;
     public string StepName { get; private set; } = default!;
@@ -31,7 +31,7 @@ public class UserJourneyLog
     private UserJourneyLog() { }
 
     public static UserJourneyLog Create(
-        Guid sessionId,
+        Guid? sessionId,
         string? userId,
         string processName,
         string stepName,

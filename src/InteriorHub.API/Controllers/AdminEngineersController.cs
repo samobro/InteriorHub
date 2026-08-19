@@ -1,4 +1,5 @@
 using InteriorHub.Application.Interfaces;
+using InteriorHub.Application.DTOs.Engineers;
 using InteriorHub.Infrastructure.Persistence;
 using InteriorHub.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
@@ -50,6 +51,13 @@ public sealed class AdminEngineersController(
     {
         // TODO: Add real admin authentication/authorization wiring.
         await engineerService.EnableAsync(id, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPut("{id:int}/trial")]
+    public async Task<IActionResult> UpdateTrial([FromRoute] int id, [FromBody] EngineerTrialUpdateDto dto, CancellationToken cancellationToken = default)
+    {
+        await engineerService.UpdateTrialAsync(id, dto, cancellationToken);
         return NoContent();
     }
 

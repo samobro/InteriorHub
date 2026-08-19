@@ -27,8 +27,8 @@ namespace ISD.Audit.Infrastructure.Persistence.Configurations
                 .ValueGeneratedOnAdd();
 
             builder.Property(x => x.SessionId)
-
-                .IsRequired();
+                .HasMaxLength(150);
+                
 
             builder.Property(x => x.UserId)
 

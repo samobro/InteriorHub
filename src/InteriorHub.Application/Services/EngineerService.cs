@@ -13,7 +13,8 @@ namespace InteriorHub.Application.Services;
 public sealed class EngineerService(
     IUnitOfWork unitOfWork,
     IMapper mapper,
-    IValidator<EngineerUpdateDto> updateValidator) : IEngineerService
+    IValidator<EngineerUpdateDto> updateValidator,
+    IValidator<EngineerTrialUpdateDto> trialUpdateValidator) : IEngineerService
 {
     public async Task<PagedResult<EngineerReadDto>> GetApprovedAsync(int pageNumber, int pageSize, string? city = null, CancellationToken cancellationToken = default)
     {
@@ -163,6 +164,19 @@ public sealed class EngineerService(
 
         engineer.Status = EngineerStatus.Active;
         engineer.IsApproved = true;
+        unitOfWork.Engineers.Update(engineer);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task UpdateTrialAsync(int id, EngineerTrialUpdateDto dto, CancellationToken cancellationToken = default)
+    {
+        await trialUpdateValidator.ValidateAndThrowAsync(dto, cancellationToken);
+
+        var engineer = await unitOfWork.Engineers.GetByIdAsync(id)
+            ?? throw new NotFoundException($"Engineer {id} was not found.");
+
+        engineer.IsTrialActive = dto.IsTrialActive;
+        engineer.TrialEndsAt = dto.TrialEndsAt;
         unitOfWork.Engineers.Update(engineer);
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }

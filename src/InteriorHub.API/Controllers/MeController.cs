@@ -1,6 +1,7 @@
 using InteriorHub.Application.DTOs.Projects;
 using InteriorHub.Application.Interfaces;
 using InteriorHub.Infrastructure.Persistence;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,6 +17,32 @@ public sealed class MeController(
     ICloudinaryService cloudinaryService,
     IUnitOfWork unitOfWork) : BaseApiController
 {
+    [HttpGet("whoami")]
+    [Authorize]
+    public IActionResult WhoAmI()
+    {
+        var rawId = User.FindFirstValue("EngineerId")
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
+
+        if (!int.TryParse(rawId, out var id))
+        {
+            throw new UnauthorizedAccessException("User ID claim is missing.");
+        }
+
+        var fullName = User.FindFirstValue(ClaimTypes.Name)
+            ?? User.FindFirstValue("name")
+            ?? string.Empty;
+        var email = User.FindFirstValue(ClaimTypes.Email)
+            ?? User.FindFirstValue("email")
+            ?? string.Empty;
+        var role = User.FindFirstValue("role")
+            ?? User.FindFirstValue(ClaimTypes.Role)
+            ?? string.Empty;
+
+        return Ok(new { id, fullName, email, role });
+    }
+
     [HttpGet("profile")]
     public async Task<IActionResult> GetProfile(CancellationToken cancellationToken = default)
     {

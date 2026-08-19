@@ -1,5 +1,5 @@
 {
-  "name": "@workspace/interior-hub",
+  "name": "@workspace/interiorhub-dashboard",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -73,8 +73,5 @@
     "vite": "catalog:",
     "wouter": "^3.3.5",
     "zod": "catalog:"
-  },
-  "dependencies": {
-    "axios": "^1.19.0"
   }
 }

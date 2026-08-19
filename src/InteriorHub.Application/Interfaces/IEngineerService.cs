@@ -17,4 +17,5 @@ public interface IEngineerService
     Task RejectAsync(int id, CancellationToken cancellationToken = default);
     Task DisableAsync(int id, CancellationToken cancellationToken = default);
     Task EnableAsync(int id, CancellationToken cancellationToken = default);
+    Task UpdateTrialAsync(int id, EngineerTrialUpdateDto dto, CancellationToken cancellationToken = default);
 }

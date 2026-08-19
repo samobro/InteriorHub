@@ -1,31 +1,28 @@
 kind = "web"
 previewPath = "/"
-title = "InteriorHub Admin Dashboard"
+title = "InteriorHub Dashboard"
+description = "An authenticated admin and engineer dashboard for managing interior design categories, engineers, projects, profiles, project imagery, and customer contact requests through an existing ASP.NET Core API."
 version = "1.0.0"
-id = "artifacts/interior-hub"
+id = "artifacts/interiorhub-dashboard"
 router = "path"
-
-[[integratedSkills]]
-name = "react-vite"
-version = "1.0.0"
 
 [[services]]
 name = "web"
 paths = [ "/" ]
-localPort = 24644
+localPort = 20407
 
 [services.development]
-run = "pnpm --filter @workspace/interior-hub run dev"
+run = "pnpm --filter @workspace/interiorhub-dashboard run dev"
 
 [services.production]
-build = [ "pnpm", "--filter", "@workspace/interior-hub", "run", "build" ]
-publicDir = "artifacts/interior-hub/dist/public"
+build = [ "pnpm", "--filter", "@workspace/interiorhub-dashboard", "run", "build" ]
 serve = "static"
+publicDir = "artifacts/interiorhub-dashboard/dist/public"
 
 [[services.production.rewrites]]
 from = "/*"
 to = "/index.html"
 
 [services.env]
-PORT = "24644"
+PORT = "20407"
 BASE_PATH = "/"
