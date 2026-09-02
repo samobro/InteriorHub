@@ -1,4 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using ISD.Aduit.Infrastructure.Persistence;
+using ISD.Audit.Infrastructure.Messaging;
+using ISD.Audit.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -13,7 +16,10 @@ public static class DependencyInjection
         services.AddDbContextPool<AuditDbContext>(options =>
             options.UseSqlServer(connectionString));
 
-
+        services.AddScoped<IUserJourneyLogRepository, UserJourneyLogRepository>();
+        services.Configure<RabbitMqOptions>(configuration.GetSection(RabbitMqOptions.SectionName));
+        services.Configure<AuditBatchOptions>(configuration.GetSection(AuditBatchOptions.SectionName));
+        services.AddHostedService<UserJourneyConsumer>();
         return services;
     }
 

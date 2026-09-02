@@ -17,10 +17,14 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="9.0.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.11" />
+    <PackageReference Include="RabbitMQ.Client" Version="7.2.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\ISD.Audit.Domain\ISD.Audit.Domain.csproj" />
+    <ProjectReference Include="..\ISD.Audit.Shared.Contract\ISD.Audit.Shared.Contract.csproj" />
   </ItemGroup>
 
 </Project>
